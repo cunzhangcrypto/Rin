@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useContext } from "react";
+import { useContext, useEffect } from "react"; // 合并了 useEffect，去掉了重复定义
 import type { DefaultParams, PathPattern } from "wouter";
 import { Route, Switch } from "wouter";
 import { AdminLayout } from "../components/admin-layout";
@@ -133,11 +133,6 @@ export function AppRoutes() {
   );
 }
 
-// 1. 首先确保在文件顶部引入 useEffect
-import { ReactNode, useContext, useEffect } from "react"; // 添加 useEffect
-
-// ... 其他 import 保持不变
-
 function AppRoute({
   path,
   children,
@@ -155,22 +150,16 @@ function AppRoute({
   const siteConfig = useSiteConfig();
   const { t } = useTranslation();
 
-  // --- 新增 SEO 标题逻辑开始 ---
+  // --- 首页 SEO 标题增强逻辑 ---
   useEffect(() => {
-    // 判断当前是否为首页（path 为 "/"）
     if (path === "/") {
       const siteName = siteConfig.name || "Web3村长";
       const siteDesc = siteConfig.description || "";
-      
-      // 首页 SEO 优化：品牌名 - 描述
-      // 建议：如果描述太长，可以截取一部分，对搜索引擎更友好
+      // 截取前 50 字，保证搜索结果显示完整
       const displayDesc = siteDesc.length > 50 ? siteDesc.slice(0, 50) + "..." : siteDesc;
       document.title = `${siteName} - ${displayDesc}`;
     }
-    // 注意：这里不需要写 else，因为文章页（FeedPage）
-    // 自己会有逻辑去修改 document.title，我们只管首页。
   }, [path, siteConfig.name, siteConfig.description]);
-  // --- 新增 SEO 标题逻辑结束 ---
 
   const content =
     requirePermission && !profile?.permission ? <ErrorPage error={t("error.permission_denied")} /> : children;
