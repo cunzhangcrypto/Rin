@@ -74,7 +74,7 @@ const FEED_CARD_STYLES: Record<
         // 1. 标题：强制两行高度 (h-[3.5rem])，多出截断 (line-clamp-2)
         title: "text-xl font-bold text-gray-700 dark:text-white text-pretty overflow-hidden line-clamp-2 h-[3.5rem] leading-[1.75rem]",
         // 3. 摘要：给一个固定高度 (h-[4.125rem])，多出截断 (line-clamp-4)
-        summary: "line-clamp-4 text-pretty overflow-hidden dark:text-neutral-500 h-[5.5rem] leading-[1.375rem]",
+        summary: "line-clamp-4 text-pretty overflow-hidden dark:text-neutral-500 h-[4.125rem] leading-[1.375rem]",
     },
     editorial: {
         card: "my-3 inline-block w-full break-inside-avoid overflow-hidden rounded-[28px] border border-black/10 bg-w p-3 shadow-[0_24px_60px_rgba(15,23,42,0.08)] transition-all hover:-translate-y-0.5 hover:shadow-[0_28px_70px_rgba(15,23,42,0.12)] dark:border-white/10",
