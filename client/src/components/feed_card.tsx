@@ -71,8 +71,10 @@ const FEED_CARD_STYLES: Record<
         card: "my-2 inline-block w-full break-inside-avoid rounded-2xl bg-w p-6 duration-300 bg-button",
         imageWrap: "",
         meta: "text-gray-400 text-sm",
-        summary: "line-clamp-4 text-pretty overflow-hidden dark:text-neutral-500",
-        title: "text-xl font-bold text-gray-700 dark:text-white text-pretty overflow-hidden",
+        // 1. 标题：强制两行高度 (h-[3.5rem])，多出截断 (line-clamp-2)
+        title: "text-xl font-bold text-gray-700 dark:text-white text-pretty overflow-hidden line-clamp-2 h-[3.5rem] leading-[1.75rem]",
+        // 3. 摘要：给一个固定高度 (h-[5.5rem])，多出截断 (line-clamp-4)
+        summary: "line-clamp-4 text-pretty overflow-hidden dark:text-neutral-500 h-[5.5rem] leading-[1.375rem]",
     },
     editorial: {
         card: "my-3 inline-block w-full break-inside-avoid overflow-hidden rounded-[28px] border border-black/10 bg-w p-3 shadow-[0_24px_60px_rgba(15,23,42,0.08)] transition-all hover:-translate-y-0.5 hover:shadow-[0_28px_70px_rgba(15,23,42,0.12)] dark:border-white/10",
@@ -85,7 +87,7 @@ const FEED_CARD_STYLES: Record<
 
 export type FeedCardProps = {
     id: string;
-    alias?: string; // 已添加：支持别名属性
+    alias?: string; 
     avatar?: string;
     draft?: number;
     listed?: number;
@@ -129,6 +131,7 @@ export function FeedCard({ id, alias, title, avatar, draft, listed, top, summary
                     {top === 1 && <span className="text-theme">{t('article.top.title')}</span>}
                 </p>
                 <p className={`${styles.summary} ${activeVariant === "editorial" ? "mt-4 max-w-3xl" : ""}`}>{summary}</p>
+                {/* 2. 标签：逻辑保持不变 */}
                 {hashtags.length > 0 &&
                     <div className={`flex flex-row flex-wrap justify-start gap-2 ${activeVariant === "editorial" ? "mt-4" : "mt-2 gap-x-2"}`}>
                         {hashtags.map(({ name }, index) => (
@@ -140,7 +143,6 @@ export function FeedCard({ id, alias, title, avatar, draft, listed, top, summary
         </div>
     );
 
-    // 修改跳转逻辑：优先使用 alias 路径[cite: 3]
     const targetHref = alias ? `/${alias}` : `/feed/${id}`;
 
     return preview ? body : <Link href={targetHref} target="_blank" className="block w-full">{body}</Link>;
