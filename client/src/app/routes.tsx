@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useContext, useEffect } from "react"; // 合并了 useEffect，去掉了重复定义
+import { useContext, useLayoutEffect } from "react"; // 使用 useLayoutEffect 确保在渲染前锁定标题
 import type { DefaultParams, PathPattern } from "wouter";
 import { Route, Switch } from "wouter";
 import { AdminLayout } from "../components/admin-layout";
@@ -150,16 +150,13 @@ function AppRoute({
   const siteConfig = useSiteConfig();
   const { t } = useTranslation();
 
-  // --- 首页 SEO 标题增强逻辑 ---
-  useEffect(() => {
+  // --- 首页 SEO 标题“死逻辑” ---
+  useLayoutEffect(() => {
     if (path === "/") {
-      const siteName = siteConfig.name || "Web3村长";
-      const siteDesc = siteConfig.description || "";
-      // 截取前 50 字，保证搜索结果显示完整
-      const displayDesc = siteDesc.length > 50 ? siteDesc.slice(0, 50) + "..." : siteDesc;
-      document.title = `${siteName} - ${displayDesc}`;
+      // 在这里直接写死你的首页标题，完全无视配置项
+      document.title = "Web3村长 | AI工具、区块链实操、网络媒体运营 - 探索技术出海与变现"; 
     }
-  }, [path, siteConfig.name, siteConfig.description]);
+  }, [path]); 
 
   const content =
     requirePermission && !profile?.permission ? <ErrorPage error={t("error.permission_denied")} /> : children;
