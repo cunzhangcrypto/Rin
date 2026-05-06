@@ -150,18 +150,28 @@ function AppRoute({
   const siteConfig = useSiteConfig();
   const { t } = useTranslation();
 
-  // --- 首页 SEO 标题动态锁定逻辑 ---
   useLayoutEffect(() => {
-    // 从 window 中读取 index.html 定义好的标题
     const targetTitle = (window as any).SEO_TITLE;
-
-    // 只有在首页路径，且全局标题存在时才执行锁定
+    
     if ((path === "/" || window.location.pathname === "/") && targetTitle) {
       if (document.title !== targetTitle) {
         document.title = targetTitle;
       }
+  
+      const observer = new MutationObserver(() => {
+        if (document.title !== targetTitle) {
+          document.title = targetTitle;
+        }
+      });
+
+      const titleNode = document.querySelector('title');
+      if (titleNode) {
+        observer.observe(titleNode, { childList: true });
+      }
+
+      return () => observer.disconnect();
     }
-  }, [path]); 
+  }, [path]);
 
   const content =
     requirePermission && !profile?.permission ? <ErrorPage error={t("error.permission_denied")} /> : children;
