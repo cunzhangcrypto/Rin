@@ -41,10 +41,17 @@ async function initRSSModules() {
 export function RSSService(): Hono {
     const app = new Hono();
     const handlers = ['/rss.xml', '/atom.xml', '/rss.json', '/feed.json'];
+    
     handlers.forEach(path => {
-        app.get(path, (c: AppContext) => handleFeed(c, path.split('/').pop()!));
+        app.get(path, async (c: AppContext) => {
+            return handleFeed(c, path.split('/').pop()!);
+        });
     });
-    app.get('/feed.xml', (c: AppContext) => c.redirect('/rss.xml', 301));
+
+    app.get('/feed.xml', async (c: AppContext) => {
+        return c.redirect('/rss.xml', 301);
+    });
+
     return app;
 }
 
@@ -52,92 +59,155 @@ async function handleFeed(c: AppContext, fileName: string) {
     const env = c.get('env');
     const db = c.get('db');
     const folder = env.S3_CACHE_FOLDER || 'cache/';
+
     const contentTypeMap: Record<string, string> = {
         'rss.xml': 'application/rss+xml; charset=UTF-8',
         'atom.xml': 'application/atom+xml; charset=UTF-8',
         'rss.json': 'application/feed+json; charset=UTF-8',
         'feed.json': 'application/feed+json; charset=UTF-8',
     };
+
     const key = path_join(folder, fileName);
     
     try {
         const response = await profileAsync(c, 'rss_s3_fetch', () => getStorageObject(env, key));
         if (response) {
             const text = await response.text();
-            return c.text(text, 200, { 'Content-Type': contentTypeMap[fileName] || 'application/xml', 'Cache-Control': 'public, max-age=3600' });
+            return c.text(text, 200, {
+                'Content-Type': contentTypeMap[fileName] || 'application/xml',
+                'Cache-Control': 'public, max-age=3600',
+            });
         }
-    } catch (e) {}
+    } catch (e: any) {}
     
     try {
-        const frontendUrl = new URL(c.req.url).origin;
-        const feed = await generateFeed(env, db, frontendUrl, c);
-        let content: string;
-        if (fileName.endsWith('.json')) content = feed.json1();
-        else if (fileName === 'atom.xml') content = feed.atom1();
-        else content = feed.rss2();
+        const url = new URL(c.req.url);
+        const frontendUrl = `${url.protocol}//${url.host}`;
         
-        return c.text(content, 200, { 'Content-Type': contentTypeMap[fileName] || 'application/xml', 'Cache-Control': 'public, max-age=300' });
-    } catch (e: any) {
-        return c.text(`Generation failed: ${e.message}`, 500);
+        const feed = await profileAsync(c, 'rss_generate_feed', () => generateFeed(env, db, frontendUrl, c));
+        
+        let content: string;
+        if (fileName.endsWith('.json')) {
+            content = feed.json1();
+        } else if (fileName === 'atom.xml') {
+            content = feed.atom1();
+        } else {
+            content = feed.rss2();
+        }
+        
+        return c.text(content, 200, {
+            'Content-Type': contentTypeMap[fileName] || 'application/xml',
+            'Cache-Control': 'public, max-age=300',
+        });
+    } catch (genError: any) {
+        return c.text(`RSS generation failed: ${genError.message}`, 500);
     }
 }
 
 async function generateFeed(env: Env, db: DB, frontendUrl: string, c?: AppContext) {
-    c ? await profileAsync(c, 'rss_init_modules', () => initRSSModules()) : await initRSSModules();
-    const faviconKey = getFaviconKey(env);
+    if (c) {
+        await profileAsync(c, 'rss_init_modules', () => initRSSModules());
+    } else {
+        await initRSSModules();
+    }
+
+    // 自动识别域名优先级：环境变量 > 实时请求域名
+    const baseUrl = env.SITE_URL || frontendUrl;
+
     const feedConfig: any = {
         title: env.RSS_TITLE || "Rin Feed",
         description: env.RSS_DESCRIPTION || "Feed from Rin",
-        id: frontendUrl,
-        link: frontendUrl,
-        copyright: "All rights reserved 2026",
-        updated: new Date(),
+        id: baseUrl,
+        link: baseUrl,
+        copyright: `All rights reserved ${new Date().getFullYear()}`,
         generator: "Feed from Rin",
-        feedLinks: { rss: `${frontendUrl}/rss.xml`, json: `${frontendUrl}/rss.json`, atom: `${frontendUrl}/atom.xml` },
+        feedLinks: {
+            rss: `${baseUrl}/rss.xml`,
+            json: `${baseUrl}/rss.json`,
+            atom: `${baseUrl}/atom.xml`,
+        },
     };
 
     const queryConfig = {
         where: and(eq(feeds.draft, 0), eq(feeds.listed, 1)),
         orderBy: [desc(feeds.createdAt), desc(feeds.updatedAt)],
         limit: 20,
-        columns: { id: true, alias: true, title: true, summary: true, content: true, createdAt: true, updatedAt: true },
-        with: { user: { columns: { id: true, username: true, avatar: true } } },
+        // 显式声明 columns 确保获取 alias
+        columns: {
+            id: true,
+            alias: true, 
+            title: true,
+            summary: true,
+            content: true,
+            createdAt: true,
+            updatedAt: true,
+        },
+        with: {
+            user: { columns: { id: true, username: true, avatar: true } },
+        },
     };
 
+    // 使用 as any 避开严格的 TS 检查
     const feed_list = (await db.query.feeds.findMany(queryConfig as any)) as any[];
 
     const feed = new Feed(feedConfig);
+
     for (const f of feed_list) {
         let contentHtml = '';
         if (f.content) {
             try {
-                const file = await unified().use(remarkParse).use(remarkGfm).use(remarkRehype).use(rehypeStringify).process(f.content);
+                const file = await unified()
+                    .use(remarkParse)
+                    .use(remarkGfm)
+                    .use(remarkRehype)
+                    .use(rehypeStringify)
+                    .process(f.content);
                 contentHtml = file.toString();
-            } catch (e) { contentHtml = f.content; }
+            } catch (e) {
+                contentHtml = f.content;
+            }
         }
+
+        // 拼接路径逻辑：优先别名
+        const itemPath = f.alias ? `/${f.alias}` : `/feed/${f.id}`;
+        // 拼接绝对链接
+        const absoluteLink = baseUrl ? `${baseUrl}${itemPath}` : itemPath;
 
         feed.addItem({
             title: f.title || "No title",
             id: f.id?.toString() || "0",
-            // 核心逻辑：确保使用别名
-            link: f.alias ? `${frontendUrl}/${f.alias}` : `${frontendUrl}/feed/${f.id}`,
+            link: absoluteLink, 
             date: f.createdAt,
-            description: f.summary || f.content?.slice(0, 100) || "",
+            description: f.summary || (f.content ? f.content.slice(0, 100) : ""),
             content: contentHtml,
             author: f.user ? [{ name: f.user.username }] : undefined,
             image: extractImage(f.content),
         });
     }
+    
     return feed;
 }
 
 export async function rssCrontab(env: Env, db: DB) {
+    // 定时任务中没有 Request，所以传入空字符串，generateFeed 会回退到 SITE_URL
     const feed = await generateFeed(env, db, '');
     const folder = env.S3_CACHE_FOLDER || "cache/";
-    const save = async (name: string, data: string) => {
+
+    async function save(name: string, data: string) {
+        const hashkey = path_join(folder, name);
         try {
-            await putStorageObjectAtKey(env, path_join(folder, name), data, name.endsWith('.json') ? 'application/json' : 'application/xml');
-        } catch (e) {}
-    };
-    await Promise.all([save("rss.xml", feed.rss2()), save("atom.xml", feed.atom1()), save("rss.json", feed.json1())]);
+            await putStorageObjectAtKey(
+                env,
+                hashkey,
+                data,
+                name.endsWith('.json') ? 'application/json' : 'application/xml'
+            );
+        } catch (e: any) {}
+    }
+
+    await Promise.all([
+        save("rss.xml", feed.rss2()),
+        save("atom.xml", feed.atom1()),
+        save("rss.json", feed.json1())
+    ]);
 }
