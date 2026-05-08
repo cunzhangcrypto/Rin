@@ -4,6 +4,7 @@
     "title": "概要"
   },
   "privacy": "プライバシーポリシー",
+  "Terms of Service": "利用規約",
   "admin": {
     "back_to_site": "サイトに戻る",
     "compat_tasks_description": "過去記事向けの AI 要約と画像 blurhash メタデータを一括補完する互換タスクを実行します。",
