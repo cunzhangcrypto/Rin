@@ -289,6 +289,19 @@ export async function runCloudflareDeploy(target: "all" | "server" | "client" = 
   }
   await fixTopField("remote", dbName, infoExists);
 
+  // --- 新增：自动替换 index.html 中的占位符逻辑 ---
+  const indexPath = "./dist/client/index.html";
+  const indexFile = Bun.file(indexPath);
+  if (await indexFile.exists()) {
+    let indexContent = await indexFile.text();
+    const gaId = process.env.VITE_GA_ID || "";
+    const adsenseId = process.env.VITE_ADSENSE_ID || "";
+    indexContent = indexContent.replace(/%VITE_GA_ID%/g, gaId);
+    indexContent = indexContent.replace(/%VITE_ADSENSE_ID%/g, adsenseId);
+    await Bun.write(indexPath, indexContent);
+    console.log("✅ HTML 占位符替换完成");
+  }
+
   if (target === "server") {
     await $`${bunExec} x wrangler deploy`;
     await syncWorkerSecrets(workerName);
