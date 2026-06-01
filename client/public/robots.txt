@@ -3,6 +3,8 @@ Allow: /
 
 Disallow: /admin/
 Disallow: /config/
+Disallow: /hashtag/
+Disallow: /feed/
 
 Sitemap: https://www.cunzhangblog.com/sitemap.xml
 
