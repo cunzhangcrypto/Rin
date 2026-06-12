@@ -1,7 +1,7 @@
 import { getApp } from "./app-instance";
 
 const ROOT_FEED_PATTERN = /^\/(rss\.xml|atom\.xml|rss\.json|feed\.json|feed\.xml)$/;
-const APP_PUBLIC_ROUTE_PATTERN = /^\/(favicon|favicon\.ico)(?:\/|$)/;
+const APP_PUBLIC_ROUTE_PATTERN = /^\/(DISABLE_FAVICON_ROUTE_MATCH)/;
 
 function isApiRequest(pathname: string) {
   return pathname.startsWith("/api/");
