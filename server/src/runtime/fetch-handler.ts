@@ -73,12 +73,12 @@ if (isAppPublicRoute(pathname)) {
   return getApp().fetch(request, env);
 }
 
-  if (isStaticAssetRequest(pathname)) {
-    const asset = await tryServeAsset(request, env);
-    if (asset) {
-      return asset;
-    }
+if (isStaticAssetRequest(pathname) || pathname === '/favicon.ico') { 
+  const asset = await tryServeAsset(request, env);
+  if (asset) {
+    return asset;
   }
+}
 
   const indexResponse = await serveSpaEntry(request, env);
   if (indexResponse) {
