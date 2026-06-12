@@ -1,7 +1,7 @@
 import { getApp } from "./app-instance";
 
 const ROOT_FEED_PATTERN = /^\/(rss\.xml|atom\.xml|rss\.json|feed\.json|feed\.xml)$/;
-const APP_PUBLIC_ROUTE_PATTERN = /^\/(DISABLE_FAVICON_ROUTE_MATCH)/;
+const APP_PUBLIC_ROUTE_PATTERN = /^\/(favicon|favicon\.ico)(?:\/|$)/;
 
 function isApiRequest(pathname: string) {
   return pathname.startsWith("/api/");
@@ -69,9 +69,14 @@ export async function handleFetch(request: Request, env: Env): Promise<Response>
     return getApp().fetch(rewriteApiRequest(request), env);
   }
 
-  if (isAppPublicRoute(pathname)) {
-    return getApp().fetch(request, env);
+ if (isAppPublicRoute(pathname)) {
+  // 如果请求的是 favicon.ico，直接放行，不让后端 getApp() 拦截
+  if (pathname === '/favicon.ico') {
+    const asset = await tryServeAsset(request, env);
+    if (asset) return asset;
   }
+  return getApp().fetch(request, env);
+}
 
   if (isStaticAssetRequest(pathname)) {
     const asset = await tryServeAsset(request, env);
