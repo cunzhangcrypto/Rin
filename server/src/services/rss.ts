@@ -2,7 +2,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import type { AppContext } from "../core/hono-types";
 import { profileAsync } from "../core/server-timing";
-import { feeds, users } from "../db/schema";
+import { feeds, info, users } from "../db/schema";
 import { extractImage } from "../utils/image";
 import { path_join } from "../utils/path";
 import { getStorageObject, getStoragePublicUrl, headStorageObject, putStorageObjectAtKey } from "../utils/storage";
@@ -111,16 +111,23 @@ async function generateFeed(env: any, db: DB, frontendUrl: string, c?: AppContex
         await initRSSModules();
     }
 
-    // 修正点：使用索引访问 ['SITE_URL'] 绕过 Env 类型定义的限制
     const baseUrl = env['SITE_URL'] || frontendUrl;
 
+    const [siteNameRow, siteDescRow] = await Promise.all([
+        db.select().from(info).where(eq(info.key, 'site.name')).execute(),
+        db.select().from(info).where(eq(info.key, 'site.description')).execute(),
+    ]);
+
+    const siteName = siteNameRow[0]?.value || env.RSS_TITLE || "Web3村长";
+    const siteDesc = siteDescRow[0]?.value || env.RSS_DESCRIPTION || "分享AIGC、互联网科技、跨境工具、网络媒体知识";
+
     const feedConfig: any = {
-        title: env.RSS_TITLE || "Rin Feed",
-        description: env.RSS_DESCRIPTION || "Feed from Rin",
+        title: siteName,
+        description: siteDesc,
         id: baseUrl,
         link: baseUrl,
         copyright: `All rights reserved ${new Date().getFullYear()}`,
-        generator: "Feed from Rin",
+        generator: siteName,
         feedLinks: {
             rss: `${baseUrl}/rss.xml`,
             json: `${baseUrl}/rss.json`,
