@@ -183,11 +183,13 @@ async function generateFeed(env: any, db: DB, frontendUrl: string, c?: AppContex
     return feed;
 }
 
-export async function rssCrontab(env: any, db: DB) {
-    // 自动获取环境变量中的 SITE_URL，确保定时任务生成的链接是完整的
-    const baseUrl = env['SITE_URL'] || ""; 
-    
-    // 如果你确定没有环境变量，必须在这里填入一个默认的，否则定时任务生成的 XML 永远没有域名
+export async function rssCrontab(env: any, db: DB, frontendUrl?: string) {
+    const baseUrl = env['SITE_URL'] || frontendUrl || "";
+    if (!baseUrl) {
+        console.warn("RSS Crontab: SITE_URL 未设置，生成的 Feed 链接将为空。请在 Cloudflare Worker 环境变量中添加 SITE_URL=https://www.cunzhangblog.com");
+        return;
+    }
+
     const feed = await generateFeed(env, db, baseUrl);
     
     const folder = env.S3_CACHE_FOLDER || "cache/";
