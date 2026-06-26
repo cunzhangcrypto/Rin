@@ -162,6 +162,29 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
                 : feed.content
             }
           />
+          <script type="application/ld+json">{JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BlogPosting",
+            "headline": feed.title ?? "",
+            "description": feed.content.length > 200 ? feed.content.substring(0, 200) : feed.content,
+            "image": headImage ?? siteConfig.avatar,
+            "datePublished": feed.createdAt,
+            "dateModified": feed.updatedAt,
+            "author": {
+              "@type": "Person",
+              "name": feed.user.username,
+              "url": document.URL
+            },
+            "publisher": {
+              "@type": "Person",
+              "name": feed.user.username
+            },
+            "mainEntityOfPage": {
+              "@type": "WebPage",
+              "@id": document.URL
+            },
+            "keywords": feed.hashtags.map(({ name }) => name).join(", ")
+          })}</script>
         </Helmet>
       )}
       <div className="w-full flex flex-row justify-center ani-show">
