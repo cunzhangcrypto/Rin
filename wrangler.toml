@@ -25,8 +25,6 @@ RSS_TITLE = "Web3村长"
 RSS_DESCRIPTION = "分享AIGC、互联网科技、跨境工具、网络媒体知识"
 SITE_URL = "https://www.cunzhangblog.com"
 CACHE_STORAGE_MODE = "database"
-ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD = "admin123"
 
 [[d1_databases]]
 binding = "DB"
@@ -41,4 +39,3 @@ queue = "rin-server-tasks"
 queue = "rin-server-tasks"
 max_batch_size = 1
 max_batch_timeout = 5
-
