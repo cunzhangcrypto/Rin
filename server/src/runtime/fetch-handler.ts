@@ -106,7 +106,7 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
   const siteName = "Web3村长";
 
   let title = `${siteName} | AI工具、技术实操、网络媒体运营 - 探索技术出海与变现`;
-  let description = "Web3村长技术博客，专注分享AI工具实操、互联网白嫖玩法、区块链技术、自媒体运营及SEO优化经验，带你探索技术出海与变现的无限可能。";
+  let description = "Web3村长技术博客，专注分享AI工具实操、免费资源分享、区块链技术、自媒体运营及SEO优化经验，带你探索技术出海与变现的无限可能。";
   let structuredData: string | undefined;
 
   if (alias) {
