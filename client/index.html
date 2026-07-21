@@ -20,7 +20,52 @@
     <meta property="og:image" content="https://www.cunzhangblog.com/og-image.png" />
     <meta name="twitter:card" content="summary_large_image" />
 
-
+    <!-- JSON-LD Schema: Person + Organization + WebSite -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Person",
+          "@id": "https://www.cunzhangblog.com/#person",
+          "name": "Web3村长",
+          "alternateName": ["Cunzhang", "cunzhangcrypto"],
+          "url": "https://www.cunzhangblog.com/about",
+          "description": "Web3村长是一名专注分享AI工具、Web3技术、互联网工具和数字生产力方法的内容创作者。",
+          "sameAs": [
+            "https://youtube.com/@cunzhangcrypto",
+            "https://space.bilibili.com/1224034462",
+            "https://github.com/cunzhangcrypto",
+            "https://twitter.com/web3cun",
+            "https://t.me/cunzhangcrypto"
+          ]
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://www.cunzhangblog.com/#organization",
+          "name": "Web3村长博客",
+          "url": "https://www.cunzhangblog.com",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://www.cunzhangblog.com/logo.png"
+          },
+          "owns": {
+            "@type": "Organization",
+            "name": "村长AI工具箱",
+            "url": "https://www.cunzhangai.com"
+          }
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://www.cunzhangblog.com/#website",
+          "url": "https://www.cunzhangblog.com",
+          "name": "Web3村长博客",
+          "publisher": { "@id": "https://www.cunzhangblog.com/#organization" },
+          "about": { "@id": "https://www.cunzhangblog.com/#person" }
+        }
+      ]
+    }
+    </script>
 
     <script async src="https://www.googletagmanager.com/gtag/js?id=%VITE_GA_ID%"></script>
     <script>
