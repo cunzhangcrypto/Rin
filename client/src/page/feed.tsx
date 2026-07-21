@@ -191,20 +191,15 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
             "image": headImage ?? siteConfig.avatar,
             "datePublished": feed.createdAt,
             "dateModified": feed.updatedAt,
-            "author": {
-              "@type": "Person",
-              "name": feed.user.username,
-              "url": document.URL
-            },
-            "publisher": {
-              "@type": "Person",
-              "name": feed.user.username
-            },
             "mainEntityOfPage": {
               "@type": "WebPage",
               "@id": document.URL
             },
-            "keywords": feed.hashtags.map(({ name }) => name).join(", ")
+            "articleSection": feed.hashtags.length > 0 ? feed.hashtags[0].name : "",
+            "wordCount": feed.content.length,
+            "keywords": feed.hashtags.map(({ name }) => name).join(", "),
+            "author": { "@id": "https://www.cunzhangblog.com/#person" },
+            "publisher": { "@id": "https://www.cunzhangblog.com/#organization" }
           })}</script>
         </Helmet>
       )}
