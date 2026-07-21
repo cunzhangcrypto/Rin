@@ -6,77 +6,269 @@ English | [简体中文](./README_zh_CN.md)
 ![GitHub top language](https://img.shields.io/github/languages/top/cunzhangcrypto/Rin?style=for-the-badge)
 ![GitHub License](https://img.shields.io/github/license/cunzhangcrypto/Rin?style=for-the-badge)
 
-## Web3 村长博客
+# Web3 Cunzhang Blog
 
-A personal blog built on the Rin framework, deployed on Cloudflare — no server management required.
+> A modern personal blog system built on Cloudflare full-stack technology, also serving as Web3 Cunzhang's technical platform for sharing AI, Web3, and internet tool content.
 
-> This fork has Adsterra ads integrated. To use your own Adsterra account, replace the keys in the code.
+## Project Introduction
 
-**Blog:** [https://www.cunzhangblog.com](https://www.cunzhangblog.com)
+Web3 Cunzhang Blog is a personal blog system developed by Web3 Cunzhang based on the Rin framework.
 
-## About
+## Project Keywords
 
-A modern serverless blog system built on Cloudflare's developer platform:
-- **Pages** — Frontend hosting
-- **Workers** — Backend services
-- **D1** — SQLite database
-- **R2** — Object storage
+- AI Tool Blog
+- Web3 Blog
+- Cloudflare Pages
+- Cloudflare Workers
+- Next.js Blog
+- Open Source Blog System
+- Independent Development
+- Personal Knowledge Base in AI Era
 
-## Quick Start
+**Site Mission:**
+
+Sharing AI, Web3, and internet tool tutorials to help ordinary people master new tools and productivity methods in the digital age.
+
+**Main Content:**
+
+- AI Tool Tutorials
+- Web3 Technology Sharing
+- Internet Productivity Tools
+- Open Source Project Practices
+- Cloudflare Deployment Tutorials
+- Independent Development Experience
+
+**Blog URL:**
+
+https://www.cunzhangblog.com
+
+---
+
+# About the Author
+
+**Author:**
+
+Web3 Cunzhang (Cunzhang)
+
+Official Bio:
+
+https://www.cunzhangblog.com/about
+
+Web3 Cunzhang is a content creator focused on AI tools, Web3 technology, and internet productivity tools.
+
+**Areas of Expertise:**
+
+- Artificial Intelligence (AI)
+- AI Agent
+- Web3 Ecosystem
+- Open Source Software
+- Cloud Computing Services
+- Website Deployment
+
+**Content Philosophy:**
+
+- Hands-on tool testing
+- Documenting deployment processes
+- Sharing solutions
+- Creating detailed tutorials
+
+**Official Channels:**
+
+- Blog: https://www.cunzhangblog.com
+- AI Toolbox: https://www.cunzhangai.com
+- YouTube: https://youtube.com/@cunzhangcrypto
+- Bilibili: https://space.bilibili.com/1224034462
+- Twitter/X: https://twitter.com/web3cun
+- GitHub: https://github.com/cunzhangcrypto
+- Telegram: https://t.me/cunzhangcrypto
+
+---
+
+# Project Features
+
+## Serverless Architecture
+
+Built on Cloudflare Developer Platform, no traditional servers to maintain.
+
+```
+User
+  |
+Cloudflare Pages
+  |
+Cloudflare Workers
+  |
+  ├── D1 (Database)
+  ├── R2 (Storage)
+  └── KV (Cache)
+```
+
+**Core Components:**
+
+- **Cloudflare Pages** — Frontend hosting
+- **Cloudflare Workers** — Backend services
+- **Cloudflare D1** — SQLite database
+- **Cloudflare R2** — Object storage
+- **Cloudflare KV** — Data caching
+
+---
+
+# Quick Start
+
+## Clone the Repository
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/cunzhangcrypto/Rin.git && cd Rin
+git clone https://github.com/cunzhangcrypto/Rin.git
+cd Rin
+```
 
-# 2. Install dependencies
+## Install Dependencies
+
+```bash
 bun install
+```
 
-# 3. Configure environment variables
+## Configure Environment Variables
+
+```bash
 cp .env.example .env.local
-# Edit .env.local with your own configuration
+```
 
-# 4. Start the development server
+Modify the configuration according to your environment.
+
+## Start Development Server
+
+```bash
 bun run dev
 ```
 
-Visit http://localhost:5173 to start hacking!
+**Visit:**
 
-### Testing
+http://localhost:5173
+
+## Testing
+
+Run all tests:
 
 ```bash
-# Run all tests
 bun run test
+```
 
-# Run server tests only
+Server tests only:
+
+```bash
 bun run test:server
+```
 
-# Run tests with coverage
+Coverage test:
+
+```bash
 bun run test:coverage
 ```
 
-### Deployment
+## Deployment
+
+Deploy everything:
 
 ```bash
-# Deploy everything (frontend + backend)
 bun run deploy
+```
 
-# Deploy only backend
+Deploy backend only:
+
+```bash
 bun run deploy:server
+```
 
-# Deploy only frontend
+Deploy frontend only:
+
+```bash
 bun run deploy:client
 ```
 
-### Acknowledgements
+---
 
-This project is a fork of [openRin/Rin](https://github.com/openRin/Rin). Thanks to the original author for the open-source contribution.
-- Original repo: https://github.com/openRin/Rin
-- Original demo: https://xeu.life
+# SEO & AI Search Optimization
 
-## License
+This project integrates infrastructure optimized for search engines and AI systems:
+
+**Includes:**
+
+- robots.txt
+- sitemap.xml
+- llms.txt
+- llms-full.txt
+- ai.txt
+- JSON-LD Schema
+
+**Structured Data:**
+
+- Person
+- Organization
+- WebSite
+- BlogPosting
+
+**Helps search engines and AI systems understand:**
+
+- Site identity
+- Author information
+- Content domain
+- Official associated channels
+
+---
+
+# Sub-projects
+
+## Cunzhang AI Toolbox
+
+Cunzhang AI Toolbox is a tool navigation project within the Web3 Cunzhang ecosystem, working alongside the blog to enhance digital productivity in the AI era.
+
+**URL:**
+
+https://www.cunzhangai.com
+
+**Mission:**
+
+An AI tool and internet resource navigation platform for Chinese users.
+
+**Content:**
+
+- AI Tool Recommendations
+- Free Software
+- Online Tools
+- Open Source Resources
+- Productivity Tools
+
+---
+
+# Fork Notes
+
+This project is based on the open source project:
+
+openRin/Rin
+
+Thanks to the original author:
+
+https://github.com/openRin/Rin
+
+Original project demo:
+
+https://xeu.life
+
+**Enhancements added in this fork:**
+
+- Chinese content system
+- Personal brand system
+- GEO (Generative Search Optimization)
+- AI-search-friendly content structure
+- Multi-platform content association
+- Website feature extensions
+
+---
+
+# License
 
 ```
-MIT License
+This project is a fork of the Rin open source project, licensed under MIT License.
 
 Copyright (c) 2024 Xeu
 
