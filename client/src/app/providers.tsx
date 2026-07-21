@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
-import { Helmet } from "react-helmet";
 import type { ConfigWrapper } from "@rin/config";
 import type { Profile } from "../state/profile";
 import { ClientConfigContext } from "../state/config";
 import { ProfileContext } from "../state/profile";
+import { SiteMeta } from "../components/site-meta";
 
 export function AppProviders({
   children,
@@ -17,10 +17,7 @@ export function AppProviders({
   return (
     <ClientConfigContext.Provider value={config}>
       <ProfileContext.Provider value={profile}>
-        <Helmet>
-          <link rel="icon" href="/favicon.ico" />
-        </Helmet>
-        {children}
+        <SiteMeta>{children}</SiteMeta>
       </ProfileContext.Provider>
     </ClientConfigContext.Provider>
   );
