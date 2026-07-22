@@ -202,6 +202,30 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
             "wordCount": feed.content.length,
             "keywords": feed.hashtags.map(({ name }) => name).join(", ")
           })}</script>
+          <script type="application/ld+json">{JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "首页",
+                "item": "https://www.cunzhangblog.com"
+              },
+              ...(feed.hashtags.length > 0 ? [{
+                "@type": "ListItem",
+                "position": 2,
+                "name": feed.hashtags[0].name,
+                "item": `https://www.cunzhangblog.com/hashtag/${feed.hashtags[0].name}`
+              }] : []),
+              {
+                "@type": "ListItem",
+                "position": feed.hashtags.length > 0 ? 3 : 2,
+                "name": feed.title ?? "文章",
+                "item": document.URL
+              }
+            ]
+          })}</script>
         </Helmet>
       )}
       <div className="w-full flex flex-row justify-center ani-show">
