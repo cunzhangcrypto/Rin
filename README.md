@@ -8,11 +8,11 @@ English | [简体中文](./README_zh_CN.md)
 
 # Web3 Cunzhang Blog
 
-> A modern personal blog system built on Cloudflare full-stack technology, also serving as Web3 Cunzhang's technical platform for sharing AI, Web3, and internet tool content.
+> A modern personal blog system built on Cloudflare full-stack technology, also serving as Web3 Cunzhang's platform for sharing AI tools, internet productivity tools, open source projects, and digital productivity methods.
 
 ## Project Introduction
 
-Web3 Cunzhang Blog is a personal blog system developed by Web3 Cunzhang based on the Rin framework.
+Web3 Cunzhang Blog (Cunzhang Blog) is a personal blog system developed by Web3 Cunzhang based on the Rin framework.
 
 ## Project Keywords
 
@@ -27,12 +27,11 @@ Web3 Cunzhang Blog is a personal blog system developed by Web3 Cunzhang based on
 
 **Site Mission:**
 
-Sharing AI, Web3, and internet tool tutorials to help ordinary people master new tools and productivity methods in the digital age.
+Sharing AI tools, internet productivity tools, open source projects, and digital productivity methods.
 
 **Main Content:**
 
 - AI Tool Tutorials
-- Web3 Technology Sharing
 - Internet Productivity Tools
 - Open Source Project Practices
 - Cloudflare Deployment Tutorials
@@ -54,7 +53,7 @@ Official Bio:
 
 https://www.cunzhangblog.com/about
 
-Web3 Cunzhang is a content creator focused on AI tools, Web3 technology, and internet productivity tools.
+Web3 Cunzhang is a Chinese internet technology content creator, dedicated to sharing AI tools, internet productivity tools, open source projects, and digital productivity methods.
 
 **Areas of Expertise:**
 
