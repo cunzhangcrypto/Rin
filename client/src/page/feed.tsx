@@ -332,6 +332,24 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
                     )}
                   </div>
                 </div>
+                {/* Tags at top */}
+                {feed.hashtags.length > 0 && (
+                  <div className="mt-4 flex flex-row flex-wrap gap-x-2">
+                    {feed.hashtags.map(({ name }, index) => (
+                      <HashTag key={index} name={name} />
+                    ))}
+                  </div>
+                )}
+                {/* Article summary */}
+                {feed.content.length > 0 && (
+                  <div className="mt-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/30">
+                    <p className="text-sm t-secondary leading-relaxed">
+                      {feed.content.length > 200
+                        ? feed.content.substring(0, 200) + "…"
+                        : feed.content}
+                    </p>
+                  </div>
+                )}
                 {(hasAISummary || showAISummaryState) && (
                   <div className="my-4 p-4 rounded-xl bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border border-purple-100 dark:border-purple-800/30">
                     <div className="flex items-center justify-between gap-2 mb-2">
@@ -360,23 +378,18 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
                 <Markdown content={feed.content} />
                 <Reward />
                 <NativeAdBanner />
-                <div className="mt-6 flex flex-col gap-2">
-                  {feed.hashtags.length > 0 && (
-                    <div className="flex flex-row flex-wrap gap-x-2">
-                      {feed.hashtags.map(({ name }, index) => (
-                        <HashTag key={index} name={name} />
-                      ))}
-                    </div>
-                  )}
-                  <div className="flex flex-row items-center">
+                {/* Author card */}
+                <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
+                  <div className="flex items-start gap-4">
                     <img
-                      src={feed.user.avatar || "/avatar.png"}
-                      className="w-8 h-8 rounded-full"
+                      src={siteConfig.avatar || "/logo.png"}
+                      className="w-14 h-14 rounded-full"
                     />
-                    <div className="ml-2">
-                      <span className="text-gray-400 text-sm cursor-default">
-                        {feed.user.username}
-                      </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-base font-bold t-primary">Web3村长</p>
+                      <p className="text-sm t-secondary mt-1 leading-relaxed">
+                        中文互联网技术内容创作者，专注分享 AI工具、开源项目、互联网效率工具和数字生产力。
+                      </p>
                     </div>
                   </div>
                 </div>
