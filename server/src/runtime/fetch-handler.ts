@@ -106,7 +106,7 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
   const siteName = "Web3村长";
 
   let title = `${siteName} | AI工具、技术实操、网络媒体运营 - 探索技术出海与变现`;
-  let description = "Web3村长技术博客，专注分享AI工具实操、免费资源分享、区块链技术、自媒体运营及SEO优化经验，带你探索技术出海与变现的无限可能。";
+  let description = "Web3村长技术博客，专注分享AI工具实操、互联网白嫖玩法、区块链技术、自媒体运营及SEO优化经验，带你探索技术出海与变现的无限可能。";
   let structuredData: string | undefined;
 
   if (alias) {
@@ -125,15 +125,36 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
         const rawDesc = feed.summary || (feed.content ? feed.content.substring(0, 200) : "");
         title = `${feedTitle} - ${siteName}`;
         if (rawDesc) description = rawDesc;
-        const tags = feed.hashtags.map((h: any) => h.hashtag.name).join(", ");
+        const tags = feed.hashtags.map((h: any) => h.hashtag.name);
+        const firstTag = tags.length > 0 ? tags[0] : "";
+        const feedUrl = `https://www.cunzhangblog.com/${alias}`;
+
+        // Extract first image from markdown content
+        let feedImage = "";
+        const imgMatch = /!\[.*?\]\((\S+?)(?:\s+"[^"]*")?\)/.exec(feed.content || "");
+        if (imgMatch) {
+          const rawUrl = imgMatch[1].split("#")[0];
+          feedImage = rawUrl.startsWith("http") ? rawUrl : `https://www.cunzhangblog.com${rawUrl.startsWith("/") ? "" : "/"}${rawUrl}`;
+        }
+
         structuredData = JSON.stringify({
           "@context": "https://schema.org",
-          "@type": "Article",
+          "@type": "BlogPosting",
+          "@id": `${feedUrl}#article`,
+          url: feedUrl,
           headline: feedTitle,
           description: rawDesc || description,
+          image: [feedImage || "https://www.cunzhangblog.com/logo.png"],
           datePublished: feed.createdAt,
           dateModified: feed.updatedAt,
-          author: { "@type": "Person", name: feed.user?.username || siteName },
+          author: { "@id": "https://www.cunzhangblog.com/#person" },
+          publisher: { "@id": "https://www.cunzhangblog.com/#organization" },
+          mainEntityOfPage: {
+            "@type": "WebPage",
+            "@id": feedUrl,
+          },
+          articleSection: firstTag,
+          wordCount: (feed.content || "").length,
           keywords: tags,
         });
       }
