@@ -147,7 +147,7 @@ export function Padding({ children, className, mode = 'both' }: { children?: Rea
           </h4>
           <nav className="flex flex-col gap-0.5">
             {UTILITY_TOOLS.map((item, i) => (
-              <a key={i} href={item.link} target="_blank" rel="noreferrer"
+              <a key={i} href={item.link} target="_blank" rel="noopener"
                  className="flex items-center py-2 px-2 rounded-xl hover:bg-teal-50 text-gray-700 font-bold text-[14px] transition-all">
                 <span className="text-base">{item.emoji}</span>
                 <span className="ml-3 flex-1 truncate">{item.text}</span>
