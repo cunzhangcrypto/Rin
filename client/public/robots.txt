@@ -8,5 +8,4 @@ Disallow: /feed/
 
 Sitemap: https://www.cunzhangblog.com/sitemap.xml
 
-llms: https://www.cunzhangblog.com/llms.txt
-ai: https://www.cunzhangblog.com/ai.txt
+
