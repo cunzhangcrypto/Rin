@@ -187,27 +187,33 @@ function AppRoute({
        return layoutDefinition.renderRouteShell({
           header: <Header>{headerComponent}</Header>,
           content: (
-            <div className="relative flex justify-center">
+            <div className="relative">
               
-              {/* 左侧挂件区：绝对定位，自动跟随内容左边缘 */}
-              <aside className="hidden 2xl:block absolute w-[240px]" 
-                     style={{ top: '170px', right: 'calc(100% + 16px)' }}>
+              {/* 左侧精致挂件区：全站显示 */}
+              <aside className="hidden 2xl:block absolute w-[240px] z-10" 
+                     style={{ 
+                       top: '170px', 
+                       left: 'calc(50% - 750px)' 
+                     }}>
                 <div className="transform scale-95 origin-top-left">
                   <Padding mode="left" />
                 </div>
               </aside>
 
-              {/* 右侧挂件：仅在首页且 2xl+ 显示，自动跟随内容右边缘 */}
+              {/* 💡 增加：右侧挂件，仅在首页 (path === "/") 显示 */}
               {path === "/" && (
-                <aside className="hidden 2xl:block absolute w-[280px]" 
-                       style={{ top: '150px', left: 'calc(100% + 16px)' }}>
+                <aside className="hidden 2xl:block absolute w-[280px] z-10" 
+                       style={{ 
+                         top: '150px', 
+                         left: 'calc(50% + 490px)' 
+                       }}>
                   <div className="transform scale-95 origin-top-left">
                     <Padding mode="right" />
                   </div>
                 </aside>
               )}
 
-              {/* 中间内容区：保持原有宽度不变 */}
+              {/* 中间内容区 */}
               <Padding className={paddingClassName}>
                 {resolvedContent}
               </Padding>
