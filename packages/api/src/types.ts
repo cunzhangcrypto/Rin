@@ -22,6 +22,7 @@ export interface RequestOptions {
 export interface Feed {
   id: number;
   title: string | null;
+  summary: string;
   content: string;
   uid: number;
   createdAt: string;
