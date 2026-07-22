@@ -189,51 +189,56 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
                 : feed.content
             }
           />
-          <script type="application/ld+json">{JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "BlogPosting",
-            "@id": `${document.URL}#article`,
-            "url": document.URL,
-            "headline": feed.title ?? "",
-            "description": feed.content.length > 200 ? feed.content.substring(0, 200) : feed.content,
-            "image": [toAbsoluteUrl(headImage ?? siteConfig.avatar)],
-            "datePublished": feed.createdAt,
-            "dateModified": feed.updatedAt,
-            "author": { "@id": "https://www.cunzhangblog.com/#person" },
-            "publisher": { "@id": "https://www.cunzhangblog.com/#organization" },
-            "mainEntityOfPage": {
-              "@type": "WebPage",
-              "@id": document.URL
-            },
-            "articleSection": feed.hashtags.length > 0 ? feed.hashtags[0].name : "",
-            "wordCount": feed.content.length,
-            "keywords": feed.hashtags.map(({ name }) => name).join(", ")
-          })}</script>
-          <script type="application/ld+json">{JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            "itemListElement": [
-              {
-                "@type": "ListItem",
-                "position": 1,
-                "name": "首页",
-                "item": "https://www.cunzhangblog.com"
-              },
-              ...(feed.hashtags.length > 0 ? [{
-                "@type": "ListItem",
-                "position": 2,
-                "name": feed.hashtags[0].name,
-                "item": `https://www.cunzhangblog.com/hashtag/${feed.hashtags[0].name}`
-              }] : []),
-              {
-                "@type": "ListItem",
-                "position": feed.hashtags.length > 0 ? 3 : 2,
-                "name": feed.title ?? "文章",
-                "item": document.URL
-              }
-            ]
-          })}</script>
         </Helmet>
+      )}
+      {/* JSON-LD outside Helmet for Google Rich Results compatibility */}
+      {feed && (
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BlogPosting",
+          "@id": `${document.URL}#article`,
+          "url": document.URL,
+          "headline": feed.title ?? "",
+          "description": feed.content.length > 200 ? feed.content.substring(0, 200) : feed.content,
+          "image": [(toAbsoluteUrl(headImage) || toAbsoluteUrl(siteConfig.avatar) || `${window.location.origin}/logo.png`)],
+          "datePublished": feed.createdAt,
+          "dateModified": feed.updatedAt,
+          "author": { "@id": "https://www.cunzhangblog.com/#person" },
+          "publisher": { "@id": "https://www.cunzhangblog.com/#organization" },
+          "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": document.URL
+          },
+          "articleSection": feed.hashtags.length > 0 ? feed.hashtags[0].name : "",
+          "wordCount": feed.content.length,
+          "keywords": feed.hashtags.map(({ name }) => name).join(", ")
+        })}</script>
+      )}
+      {feed && (
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "首页",
+              "item": "https://www.cunzhangblog.com"
+            },
+            ...(feed.hashtags.length > 0 ? [{
+              "@type": "ListItem",
+              "position": 2,
+              "name": feed.hashtags[0].name,
+              "item": `https://www.cunzhangblog.com/hashtag/${feed.hashtags[0].name}`
+            }] : []),
+            {
+              "@type": "ListItem",
+              "position": feed.hashtags.length > 0 ? 3 : 2,
+              "name": feed.title ?? "文章",
+              "item": document.URL
+            }
+          ]
+        })}</script>
       )}
       <div className="w-full flex flex-row justify-center ani-show">
         {error && (
