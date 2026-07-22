@@ -187,34 +187,30 @@ function AppRoute({
        return layoutDefinition.renderRouteShell({
           header: <Header>{headerComponent}</Header>,
           content: (
-            <div className="mx-auto w-full max-w-[1440px] flex justify-center">
+            <div className="relative flex justify-center">
               
-              {/* 左侧挂件区：仅在 2xl+ 显示 */}
-              <aside className="hidden 2xl:block w-[240px] flex-shrink-0">
-                <div className="sticky self-start" style={{ top: '170px' }}>
-                  <div className="transform scale-95 origin-top-left">
-                    <Padding mode="left" />
-                  </div>
+              {/* 左侧挂件区：绝对定位，自动跟随内容左边缘 */}
+              <aside className="hidden 2xl:block absolute w-[240px]" 
+                     style={{ top: '170px', right: 'calc(100% + 16px)' }}>
+                <div className="transform scale-95 origin-top-left">
+                  <Padding mode="left" />
                 </div>
               </aside>
 
-              {/* 中间内容区：2xl 以下满宽，2xl+ 弹性收缩 */}
-              <div className="min-w-0 2xl:flex-1 w-full">
-                <Padding className={paddingClassName}>
-                  {resolvedContent}
-                </Padding>
-              </div>
-
-              {/* 右侧挂件：仅在首页且 2xl+ 显示 */}
+              {/* 右侧挂件：仅在首页且 2xl+ 显示，自动跟随内容右边缘 */}
               {path === "/" && (
-                <aside className="hidden 2xl:block w-[280px] flex-shrink-0">
-                  <div className="sticky self-start" style={{ top: '150px' }}>
-                    <div className="transform scale-95 origin-top-left">
-                      <Padding mode="right" />
-                    </div>
+                <aside className="hidden 2xl:block absolute w-[280px]" 
+                       style={{ top: '150px', left: 'calc(100% + 16px)' }}>
+                  <div className="transform scale-95 origin-top-left">
+                    <Padding mode="right" />
                   </div>
                 </aside>
               )}
+
+              {/* 中间内容区：保持原有宽度不变 */}
+              <Padding className={paddingClassName}>
+                {resolvedContent}
+              </Padding>
 
             </div>
           ),
