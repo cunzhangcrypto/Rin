@@ -27,7 +27,7 @@ Web3村长
 
 领域：
 
-AI / Web3 / 技术工具 / 软件评测
+AI / 开源项目/ 技术工具 / 软件评测
 
 
 作者通过实际测试和使用经验发布内容。
@@ -107,7 +107,7 @@ AI / Web3 / 技术工具 / 软件评测
 https://www.cunzhangblog.com
 
 
-工具导航：
+资源工具导航：
 
 https://www.cunzhangai.com
 
