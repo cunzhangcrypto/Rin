@@ -9,11 +9,11 @@ const SOCIAL_LINKS = [
 ];
 
 const SERVICES = [
-  '跨境支付 / 虚拟卡',
-  'AI 自动化工作流',
-  '网络安全 / 隐私工具',
-  '互联网科技工具',
-  '区块链 / 动态资讯',
+  'AI 工具实测',
+  '互联网效率工具',
+  '开源项目部署',
+  'Cloudflare 技术',
+  'Web3 实践分享',
 ];
 
 const UTILITY_TOOLS = [
@@ -22,7 +22,7 @@ const UTILITY_TOOLS = [
   { emoji: '📹', text: '指纹浏览器', link: 'https://www.cunzhangblog.com/bitbrowser' },
   { emoji: '🖼️', text: 'eSIM神器', link: 'https://www.cunzhangblog.com/estk' },
   { emoji: '📹', text: 'Gate交易所', link: 'https://www.gateweb.xyz/share/cunzhang' },
-  { emoji: '📢', text: '广告展示', link: 'https://www.effectivecpmnetwork.com/fykm9ug84?key=925835599c2a0eabe506808b07baabc9' },
+  { emoji: '📢', text: '外部资源', link: 'https://www.effectivecpmnetwork.com/fykm9ug84?key=925835599c2a0eabe506808b07baabc9' },
 ];
 
 const getSocialIcon = (platform: string) => {
