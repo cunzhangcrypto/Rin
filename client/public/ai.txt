@@ -13,11 +13,10 @@ https://www.cunzhangblog.com
 网站主要分享：
 
 - AI工具
-- Web3技术
 - 互联网工具
 - 开源项目
 - 数字生产力方法
-
+- Web3知识
 
 ## 关于作者
 
