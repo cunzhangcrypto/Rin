@@ -186,20 +186,21 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
           <script type="application/ld+json">{JSON.stringify({
             "@context": "https://schema.org",
             "@type": "BlogPosting",
+            "@id": `${document.URL}#article`,
             "headline": feed.title ?? "",
             "description": feed.content.length > 200 ? feed.content.substring(0, 200) : feed.content,
-            "image": headImage ?? siteConfig.avatar,
+            "image": [headImage ?? siteConfig.avatar],
             "datePublished": feed.createdAt,
             "dateModified": feed.updatedAt,
+            "author": { "@id": "https://www.cunzhangblog.com/#person" },
+            "publisher": { "@id": "https://www.cunzhangblog.com/#organization" },
             "mainEntityOfPage": {
               "@type": "WebPage",
               "@id": document.URL
             },
             "articleSection": feed.hashtags.length > 0 ? feed.hashtags[0].name : "",
             "wordCount": feed.content.length,
-            "keywords": feed.hashtags.map(({ name }) => name).join(", "),
-            "author": { "@id": "https://www.cunzhangblog.com/#person" },
-            "publisher": { "@id": "https://www.cunzhangblog.com/#organization" }
+            "keywords": feed.hashtags.map(({ name }) => name).join(", ")
           })}</script>
         </Helmet>
       )}
