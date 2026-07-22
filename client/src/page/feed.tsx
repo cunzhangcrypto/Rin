@@ -43,6 +43,12 @@ function NativeAdBanner() {
   return <div id="container-ed2c7e50ce31ed37574e05d0015c942c" />;
 }
 
+function toAbsoluteUrl(url?: string | null) {
+  if (!url) return undefined;
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  return `${window.location.origin}${url.startsWith("/") ? "" : "/"}${url}`;
+}
+
 function extractFirstMarkdownImageUrl(content: string) {
   const match = /!\[.*?\]\((\S+?)(?:\s+"[^"]*")?\)/.exec(content);
   if (!match) {
@@ -187,9 +193,10 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
             "@context": "https://schema.org",
             "@type": "BlogPosting",
             "@id": `${document.URL}#article`,
+            "url": document.URL,
             "headline": feed.title ?? "",
             "description": feed.content.length > 200 ? feed.content.substring(0, 200) : feed.content,
-            "image": [headImage ?? siteConfig.avatar],
+            "image": [toAbsoluteUrl(headImage ?? siteConfig.avatar)],
             "datePublished": feed.createdAt,
             "dateModified": feed.updatedAt,
             "author": { "@id": "https://www.cunzhangblog.com/#person" },
