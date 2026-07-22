@@ -199,7 +199,7 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
           "@id": `${document.URL}#article`,
           "url": document.URL,
           "headline": feed.title ?? "",
-          "description": feed.content.length > 200 ? feed.content.substring(0, 200) : feed.content,
+          "description": feed.summary || (feed.content.length > 200 ? feed.content.substring(0, 200) : feed.content),
           "image": [(toAbsoluteUrl(headImage) || toAbsoluteUrl(siteConfig.avatar) || `${window.location.origin}/logo.png`)],
           "datePublished": feed.createdAt,
           "dateModified": feed.updatedAt,
@@ -341,12 +341,10 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
                   </div>
                 )}
                 {/* Article summary */}
-                {feed.content.length > 0 && (
+                {feed.summary?.trim() && (
                   <div className="mt-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/30">
                     <p className="text-sm t-secondary leading-relaxed">
-                      {feed.content.length > 200
-                        ? feed.content.substring(0, 200) + "…"
-                        : feed.content}
+                      {feed.summary}
                     </p>
                   </div>
                 )}
