@@ -2,7 +2,7 @@ import { eq, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { getApp } from "./app-instance";
 
-const ROOT_FEED_PATTERN = /^\/(rss\.xml|atom\.xml|rss\.json|feed\.json|feed\.xml)$/;
+const ROOT_FEED_PATTERN = /^\/(rss\.xml|atom\.xml|rss\.json|feed\.json|feed\.xml|sitemap-posts\.json)$/;
 const APP_PUBLIC_ROUTE_PATTERN = /^\/(favicon)(?:\/|$)/;
 
 const SKIP_SEO_ROUTES = new Set(["/login", "/callback", "/profile", "/user/github"]);
