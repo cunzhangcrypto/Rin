@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import type { AppContext } from "../core/hono-types";
 import { profileAsync } from "../core/server-timing";
@@ -49,10 +49,68 @@ export function RSSService(): Hono {
     });
 
     app.get('/feed.xml', async (c: AppContext) => {
-        return c.redirect('/rss.xml', 301);
-    });
+        return c.redirect('/rss.xml', 301);
+    });
 
-    return app;
+    // 轻量级 Sitemap 数据接口：只返回 URL + 日期，不含正文，供 Sitemap Worker 使用
+    // 支持分页：/sitemap-posts.json?per_page=500&page=1
+    // 默认一次性返回最多 5000 篇，超出需分页
+    app.get('/sitemap-posts.json', async (c: AppContext) => {
+        const env = c.get('env');
+        const db = c.get('db');
+        const baseUrl = env['SITE_URL'] || `${new URL(c.req.url).protocol}//${new URL(c.req.url).host}`;
+
+        const rawPerPage = c.req.query('per_page');
+        const rawPage = c.req.query('page');
+        const perPage = rawPerPage ? Math.min(Math.max(parseInt(rawPerPage, 10) || 500, 1), 5000) : 5000;
+        const page = rawPage ? Math.max(parseInt(rawPage, 10) || 1, 1) : 1;
+        const offset = (page - 1) * perPage;
+
+        const [posts, countResult] = await Promise.all([
+            db.query.feeds.findMany({
+                where: and(eq(feeds.draft, 0), eq(feeds.listed, 1)),
+                orderBy: [desc(feeds.createdAt), desc(feeds.updatedAt)],
+                limit: perPage,
+                offset: offset,
+                columns: {
+                    id: true,
+                    alias: true,
+                    title: true,
+                    summary: true,
+                    createdAt: true,
+                    updatedAt: true,
+                },
+            }),
+            db.select({ count: sql<number>`count(*)` }).from(feeds).where(and(eq(feeds.draft, 0), eq(feeds.listed, 1))).execute(),
+        ]);
+
+        const total = Number(countResult[0]?.count || 0);
+        const totalPages = Math.ceil(total / perPage);
+
+        const items = posts.map((p) => ({
+            url: p.alias ? `${baseUrl}/${p.alias}` : `${baseUrl}/feed/${p.id}`,
+            title: p.title,
+            summary: p.summary,
+            lastmod: p.updatedAt || p.createdAt,
+        }));
+
+        return c.json({
+            items,
+            pagination: {
+                page,
+                perPage,
+                total,
+                totalPages,
+                hasNext: page < totalPages,
+                hasPrev: page > 1,
+            },
+        }, 200, {
+            'Cache-Control': 'public, max-age=300',
+            'Access-Control-Allow-Origin': '*',
+        });
+    });
+
+    return app;
 }
 
 async function handleFeed(c: AppContext, fileName: string) {
@@ -138,7 +196,7 @@ async function generateFeed(env: any, db: DB, frontendUrl: string, c?: AppContex
     const queryConfig = {
         where: and(eq(feeds.draft, 0), eq(feeds.listed, 1)),
         orderBy: [desc(feeds.createdAt), desc(feeds.updatedAt)],
-        limit: 200,
+        limit: 100,
         columns: {
             id: true,
             alias: true, 
