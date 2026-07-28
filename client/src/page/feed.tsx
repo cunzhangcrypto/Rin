@@ -22,27 +22,6 @@ import { AdjacentSection } from "../components/adjacent_feed.tsx";
 import { stripImageUrlMetadata } from "../utils/image-upload";
 import { Reward } from "../components/reward";
 
-function NativeAdBanner() {
-  useEffect(() => {
-    const container = document.getElementById('container-ed2c7e50ce31ed37574e05d0015c942c');
-    if (!container) return;
-
-    const script = document.createElement('script');
-    script.src = 'https://pl30428536.effectivecpmnetwork.com/ed2c7e50ce31ed37574e05d0015c942c/invoke.js';
-    script.async = true;
-    script.setAttribute('data-cfasync', 'false');
-    container.appendChild(script);
-
-    return () => {
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
-    };
-  }, []);
-
-  return <div id="container-ed2c7e50ce31ed37574e05d0015c942c" />;
-}
-
 function toAbsoluteUrl(url?: string | null) {
   if (!url) return undefined;
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
@@ -375,7 +354,6 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
                 )}
                 <Markdown content={feed.content} />
                 <Reward />
-                <NativeAdBanner />
                 {/* Author card */}
                 <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
                   <div className="flex items-start gap-4">

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Padding as RinPadding } from "@rin/ui";
 
 const SOCIAL_LINKS = [
@@ -22,7 +22,6 @@ const UTILITY_TOOLS = [
   { emoji: '📹', text: '指纹浏览器', link: 'https://www.cunzhangblog.com/bitbrowser' },
   { emoji: '🖼️', text: 'eSIM神器', link: 'https://www.cunzhangblog.com/estk' },
   { emoji: '📹', text: 'Gate交易所', link: 'https://www.gateweb.xyz/share/cunzhang' },
-  { emoji: '📢', text: '外部资源', link: 'https://www.effectivecpmnetwork.com/fykm9ug84?key=925835599c2a0eabe506808b07baabc9' },
 ];
 
 const getSocialIcon = (platform: string) => {
@@ -30,44 +29,6 @@ const getSocialIcon = (platform: string) => {
   if (p === 'bilibili') return null;
   return `https://img.icons8.com/ios-filled/50/ffffff/${p === 'youtube' ? 'youtube-play' : p === 'telegram' ? 'telegram-app' : p}.png`;
 };
-
-function AdsterraBanner() {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    // 设置全局 atOptions
-    (window as any).atOptions = {
-      'key' : '3dfa1edc31e8142f46096dcf91f36c64',
-      'format' : 'iframe',
-      'height' : 250,
-      'width' : 300,
-      'params' : {},
-    };
-
-    // 加载广告脚本
-    const script = document.createElement('script');
-    script.src = 'https://www.highperformanceformat.com/3dfa1edc31e8142f46096dcf91f36c64/invoke.js';
-    script.async = true;
-    script.setAttribute('data-cfasync', 'false');
-    container.appendChild(script);
-
-    return () => {
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
-      delete (window as any).atOptions;
-    };
-  }, []);
-
-  return (
-    <div className="bg-white rounded-[1.8rem] overflow-hidden shadow-sm border border-gray-100 text-center" style={{ minHeight: '250px' }}>
-      <div ref={containerRef} />
-    </div>
-  );
-}
 
 export function Padding({ children, className, mode = 'both' }: { children?: React.ReactNode, className?: string, mode?: 'left' | 'right' | 'both' }) {
   const [data, setData] = useState<any>(null);
@@ -155,9 +116,6 @@ export function Padding({ children, className, mode = 'both' }: { children?: Rea
             ))}
           </nav>
         </div>
-
-        {/* Adsterra 广告 300x250 */}
-        <AdsterraBanner />
 
       </div>
     );
