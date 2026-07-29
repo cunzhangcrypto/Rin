@@ -173,7 +173,7 @@ async function generateFeed(env: any, db: DB, frontendUrl: string, c?: AppContex
     ]);
 
     const siteName = siteNameRow[0]?.value || env.RSS_TITLE || "Web3村长";
-    const siteDesc = siteDescRow[0]?.value || env.RSS_DESCRIPTION || "分享AIGC、互联网科技、跨境工具、网络媒体知识";
+    const siteDesc = siteDescRow[0]?.value || env.RSS_DESCRIPTION || "Web3村长是一名中文互联网技术内容创作者，专注分享AI工具、开源项目、互联网效率工具、数字生产力方法和技术实测教程。";
     const rssTitle = siteName.endsWith('博客') ? siteName : `${siteName}博客`;
 
     const feedConfig: any = {
