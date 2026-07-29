@@ -34,37 +34,6 @@ function mdToPlainText(md: string): string {
         .trim();
 }
 
-// Lightweight markdown-to-HTML for RSS content (avoids heavy unified/remark/rehype stack)
-function mdToHtml(md: string): string {
-    let html = md
-        // Code blocks
-        .replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
-        // Inline code
-        .replace(/`([^`]+)`/g, '<code>$1</code>')
-        // Images
-        .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" />')
-        // Links
-        .replace(/\[([^\]]*)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
-        // Bold + italic
-        .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
-        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.+?)\*/g, '<em>$1</em>')
-        // Headers
-        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-        .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-        // Blockquotes
-        .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
-        // Horizontal rules
-        .replace(/^---$/gm, '<hr />')
-        // Line breaks -> wrap in paragraphs
-        .replace(/\n\n/g, '</p><p>')
-        // Remaining single newlines -> <br />
-        .replace(/\n/g, '<br />');
-
-    return `<p>${html}</p>`;
-}
-
 export function RSSService(): Hono {
     const app = new Hono();
     const handlers = ['/rss.xml', '/atom.xml', '/rss.json', '/feed.json'];
@@ -245,11 +214,6 @@ async function generateFeed(env: any, db: DB, frontendUrl: string, c?: AppContex
     const feed = new Feed(feedConfig);
 
     for (const f of feed_list) {
-        let contentHtml = '';
-        if (f.content) {
-            // Use lightweight markdown-to-HTML instead of heavy unified/remark/rehype pipeline
-            contentHtml = mdToHtml(f.content);
-        }
 
         const itemPath = f.alias ? `/${f.alias}` : `/feed/${f.id}`;
         const absoluteLink = baseUrl ? `${baseUrl}${itemPath}` : itemPath;
@@ -260,7 +224,6 @@ async function generateFeed(env: any, db: DB, frontendUrl: string, c?: AppContex
             link: absoluteLink, 
             date: f.createdAt,
             description: f.summary || mdToPlainText(f.content || "").slice(0, 200),
-            content: contentHtml,
             author: [{ name: siteName }],
             category: (f as any).hashtags?.map((h: any) => ({ name: h.hashtag.name })) || undefined,
             image: extractImage(f.content),
