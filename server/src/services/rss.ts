@@ -205,15 +205,16 @@ async function generateFeed(env: any, db: DB, frontendUrl: string, c?: AppContex
 
     const siteName = siteNameRow[0]?.value || env.RSS_TITLE || "Web3村长";
     const siteDesc = siteDescRow[0]?.value || env.RSS_DESCRIPTION || "分享AIGC、互联网科技、跨境工具、网络媒体知识";
+    const rssTitle = siteName.endsWith('博客') ? siteName : `${siteName}博客`;
 
     const feedConfig: any = {
-        title: siteName,
+        title: rssTitle,
         description: siteDesc,
         id: baseUrl,
         link: baseUrl,
         language: 'zh-CN',
         copyright: `All rights reserved ${new Date().getFullYear()}`,
-        generator: siteName,
+        generator: rssTitle,
         feedLinks: {
             rss: `${baseUrl}/rss.xml`,
             json: `${baseUrl}/rss.json`,
@@ -260,7 +261,7 @@ async function generateFeed(env: any, db: DB, frontendUrl: string, c?: AppContex
             date: f.createdAt,
             description: f.summary || mdToPlainText(f.content || "").slice(0, 200),
             content: contentHtml,
-            author: f.user ? [{ name: f.user.username }] : undefined,
+            author: [{ name: siteName }],
             category: (f as any).hashtags?.map((h: any) => ({ name: h.hashtag.name })) || undefined,
             image: extractImage(f.content),
         });
