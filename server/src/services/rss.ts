@@ -211,6 +211,7 @@ async function generateFeed(env: any, db: DB, frontendUrl: string, c?: AppContex
         description: siteDesc,
         id: baseUrl,
         link: baseUrl,
+        language: 'zh-CN',
         copyright: `All rights reserved ${new Date().getFullYear()}`,
         generator: siteName,
         feedLinks: {
@@ -235,6 +236,7 @@ async function generateFeed(env: any, db: DB, frontendUrl: string, c?: AppContex
         },
         with: {
             user: { columns: { id: true, username: true, avatar: true } },
+            hashtags: { columns: {}, with: { hashtag: { columns: { name: true } } } },
         },
     };
 
@@ -253,12 +255,13 @@ async function generateFeed(env: any, db: DB, frontendUrl: string, c?: AppContex
 
         feed.addItem({
             title: f.title || "No title",
-            id: f.id?.toString() || "0",
+            id: absoluteLink,
             link: absoluteLink, 
             date: f.createdAt,
             description: f.summary || mdToPlainText(f.content || "").slice(0, 200),
             content: contentHtml,
             author: f.user ? [{ name: f.user.username }] : undefined,
+            category: (f as any).hashtags?.map((h: any) => ({ name: h.hashtag.name })) || undefined,
             image: extractImage(f.content),
         });
     }
