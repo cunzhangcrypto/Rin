@@ -11,31 +11,58 @@ import type { DB } from "../core/hono-types";
 
 // Lazy-loaded modules for RSS generation
 let Feed: any;
-let unified: any;
-let remarkParse: any;
-let remarkGfm: any;
-let remarkRehype: any;
-let rehypeStringify: any;
+let FeedModule: any;
 
 async function initRSSModules() {
-    if (!Feed) {
-        const feed = await import("feed");
-        Feed = feed.Feed;
-    }
-    if (!unified) {
-        const [u, rp, rg, rr, rs] = await Promise.all([
-            import("unified"),
-            import("remark-parse"),
-            import("remark-gfm"),
-            import("remark-rehype"),
-            import("rehype-stringify")
-        ]);
-        unified = u.unified;
-        remarkParse = rp.default;
-        remarkGfm = rg.default;
-        remarkRehype = rr.default;
-        rehypeStringify = rs.default;
-    }
+    if (!Feed && !FeedModule) {
+        FeedModule = await import("feed");
+        Feed = FeedModule.Feed;
+    }
+}
+
+// Simple markdown-to-plain-text conversion (no heavy npm modules)
+function mdToPlainText(md: string): string {
+    return md
+        .replace(/```[\s\S]*?```/g, '')           // remove code blocks
+        .replace(/!\[.*?\]\(.*?\)/g, '')           // remove images
+        .replace(/\[([^\]]*)\]\(.*?\)/g, '$1')     // convert links to text
+        .replace(/[#*_~`>|\\\-]{1,}/g, '')         // remove formatting chars
+        .replace(/\n{3,}/g, '\n\n')                // normalize newlines
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .trim();
+}
+
+// Lightweight markdown-to-HTML for RSS content (avoids heavy unified/remark/rehype stack)
+function mdToHtml(md: string): string {
+    let html = md
+        // Code blocks
+        .replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+        // Inline code
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        // Images
+        .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" />')
+        // Links
+        .replace(/\[([^\]]*)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+        // Bold + italic
+        .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        // Headers
+        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+        .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+        // Blockquotes
+        .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+        // Horizontal rules
+        .replace(/^---$/gm, '<hr />')
+        // Line breaks -> wrap in paragraphs
+        .replace(/\n\n/g, '</p><p>')
+        // Remaining single newlines -> <br />
+        .replace(/\n/g, '<br />');
+
+    return `<p>${html}</p>`;
 }
 
 export function RSSService(): Hono {
@@ -196,7 +223,7 @@ async function generateFeed(env: any, db: DB, frontendUrl: string, c?: AppContex
     const queryConfig = {
         where: and(eq(feeds.draft, 0), eq(feeds.listed, 1)),
         orderBy: [desc(feeds.createdAt), desc(feeds.updatedAt)],
-        limit: 100,
+        limit: 50,
         columns: {
             id: true,
             alias: true, 
@@ -217,17 +244,8 @@ async function generateFeed(env: any, db: DB, frontendUrl: string, c?: AppContex
     for (const f of feed_list) {
         let contentHtml = '';
         if (f.content) {
-            try {
-                const file = await unified()
-                    .use(remarkParse)
-                    .use(remarkGfm)
-                    .use(remarkRehype)
-                    .use(rehypeStringify)
-                    .process(f.content);
-                contentHtml = file.toString();
-            } catch (e) {
-                contentHtml = f.content;
-            }
+            // Use lightweight markdown-to-HTML instead of heavy unified/remark/rehype pipeline
+            contentHtml = mdToHtml(f.content);
         }
 
         const itemPath = f.alias ? `/${f.alias}` : `/feed/${f.id}`;
@@ -238,7 +256,7 @@ async function generateFeed(env: any, db: DB, frontendUrl: string, c?: AppContex
             id: f.id?.toString() || "0",
             link: absoluteLink, 
             date: f.createdAt,
-            description: f.summary || (f.content ? f.content.slice(0, 100) : ""),
+            description: f.summary || mdToPlainText(f.content || "").slice(0, 200),
             content: contentHtml,
             author: f.user ? [{ name: f.user.username }] : undefined,
             image: extractImage(f.content),
