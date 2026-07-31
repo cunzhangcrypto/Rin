@@ -126,9 +126,6 @@ function TodayTools() {
           </span>
         </a>
       ))}
-      <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">
-        每次刷新随机展示 2 个工具 · 点击「下载」跳转夸克网盘
-      </p>
     </div>
   );
 }
