@@ -109,6 +109,18 @@ export function buildWranglerQueueConfig(taskQueueName: string, preview = false)
   `);
 }
 
+// KV namespace 绑定（用于 CACHE_KV 内容缓存），未配置时返回空
+export function buildWranglerKVConfig(kvNamespaceId: string) {
+  if (!kvNamespaceId || kvNamespaceId.trim() === "") {
+    return "";
+  }
+  return stripIndent(`
+    [[kv_namespaces]]
+    binding = "CACHE_KV"
+    id = "${kvNamespaceId.trim()}"
+  `);
+}
+
 export function buildWranglerObservabilityConfig(preview = false) {
   if (!preview) {
     return "";
@@ -157,6 +169,7 @@ export async function runCloudflareDeploy(target: "all" | "server" | "client" = 
   const rssTitle = env("RSS_TITLE", "");
   const rssDescription = env("RSS_DESCRIPTION", "");
   const cacheStorageMode = env("CACHE_STORAGE_MODE", "s3");
+  const kvNamespaceId = env("KV_NAMESPACE_ID", "");
   const name = env("NAME", "Rin");
   const description = env("DESCRIPTION", "A lightweight personal blogging system");
   const avatar = env("AVATAR", "");
@@ -195,6 +208,7 @@ export async function runCloudflareDeploy(target: "all" | "server" | "client" = 
       directory = "./dist/client"
       binding = "ASSETS"
       ${buildWranglerTriggersConfig(preview)}
+      ${buildWranglerKVConfig(kvNamespaceId)}
       ${buildWranglerObservabilityConfig(preview)}
 
       [vars]

@@ -103,24 +103,77 @@ export function FeedsPage() {
                                 <FeedCard key={id} id={id} {...feed} />
                             ))}
                         </div>
-                        <div className="wauto flex flex-row items-center mt-4 ani-show">
-                            {page > 1 &&
-                                <Link href={`/?type=${listState}&page=${(page - 1)}`}
-                                    className={`text-sm font-normal rounded-full px-4 py-2 text-white bg-theme`}>
-                                    {t('previous')}
-                                </Link>
-                            }
-                            <div className="flex-1" />
-                            {feeds[listState]?.hasNext &&
-                                <Link href={`/?type=${listState}&page=${(page + 1)}`}
-                                    className={`text-sm font-normal rounded-full px-4 py-2 text-white bg-theme`}>
-                                    {t('next')}
-                                </Link>
-                            }
-                        </div>
+                        <Pagination
+                            type={listState}
+                            page={page}
+                            totalPages={Math.max(1, Math.ceil((feeds[listState]?.size || 0) / Math.max(1, limit)))}
+                            hasNext={feeds[listState]?.hasNext}
+                        />
                     </Waiting>
                 </main>
             </Waiting>
         </>
+    )
+}
+
+// 生成分页页码：首页 + 当前页附近 ±2 + 尾页，中间用省略号
+function buildPageItems(current: number, total: number): (number | string)[] {
+    if (total <= 7) {
+        return Array.from({ length: total }, (_, i) => i + 1)
+    }
+    const items: (number | string)[] = [1]
+    const start = Math.max(2, current - 2)
+    const end = Math.min(total - 1, current + 2)
+    if (start > 2) items.push('...')
+    for (let i = start; i <= end; i++) items.push(i)
+    if (end < total - 1) items.push('...')
+    items.push(total)
+    return items
+}
+
+function Pagination({ type, page, totalPages, hasNext }: { type: FeedType; page: number; totalPages: number; hasNext: boolean }) {
+    const { t } = useTranslation()
+    if (totalPages <= 1) return null
+    return (
+        <div className="wauto flex flex-row items-center mt-4 ani-show">
+            {page > 1 &&
+                <Link href={`/?type=${type}&page=${(page - 1)}`}
+                    className={`text-sm font-normal rounded-full px-4 py-2 text-white bg-theme`}>
+                    {t('previous')}
+                </Link>
+            }
+            <div className="flex-1" />
+            <div className="flex flex-row items-center gap-1 flex-wrap justify-center">
+                {page > 3 &&
+                    <Link href={`/?type=${type}&page=1`}
+                        className="text-sm font-normal rounded-full px-3 py-2 text-neutral-500 hover:text-theme">
+                        {t('home')}
+                    </Link>
+                }
+                {buildPageItems(page, totalPages).map((item, i) =>
+                    item === '...' ? (
+                        <span key={`ellipsis-${i}`} className="px-2 py-2 text-sm text-neutral-400">…</span>
+                    ) : (
+                        <Link key={item} href={`/?type=${type}&page=${item}`}
+                            className={`text-sm font-normal rounded-full px-3.5 py-2 ${item === page ? "text-white bg-theme" : "text-neutral-500 hover:text-theme"}`}>
+                            {item}
+                        </Link>
+                    )
+                )}
+                {page < totalPages &&
+                    <Link href={`/?type=${type}&page=${totalPages}`}
+                        className="text-sm font-normal rounded-full px-3 py-2 text-neutral-500 hover:text-theme">
+                        {t('last_page')}
+                    </Link>
+                }
+            </div>
+            <div className="flex-1" />
+            {hasNext &&
+                <Link href={`/?type=${type}&page=${(page + 1)}`}
+                    className={`text-sm font-normal rounded-full px-4 py-2 text-white bg-theme`}>
+                    {t('next')}
+                </Link>
+            }
+        </div>
     )
 }

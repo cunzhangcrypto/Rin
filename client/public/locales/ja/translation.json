@@ -191,6 +191,7 @@
     "total$count_other": "{{count}} 件の動態"
   },
   "next": "次のページ",
+  "last_page": "最終ページ",
   "no_more": "もうない",
   "preview": "プレビュー",
   "previous": "前のページ",

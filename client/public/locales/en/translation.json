@@ -200,7 +200,8 @@
     "total$count_other": "{{count}} moments in total"
   },
   "next": "Next Page",
-  "no_more": "No More",
+  "last_page": "Last Page",
+  "no_more": "No more",
   "preview": "Preview",
   "previous": "Previous Page",
   "publish": {

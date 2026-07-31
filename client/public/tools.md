@@ -3,7 +3,15 @@
 # 前端每次随机展示 2 个，刷新页面自动更换
 # 链接用 https://pan.quark.cn/s/xxxx 占位，部署前请替换为真实分享链接
 
-MinerU - https://pan.quark.cn/s/xxxx - AI 驱动的 PDF/文档智能解析，一键提取高精度文本、表格与公式
+AutoEditor - https://pan.quark.cn/s/f9e7769b4ed4 - 开源自动剪辑工具，一键剔除视频空白和停顿，博主初剪效率提升10倍
+Mineradio - https://pan.quark.cn/s/9c82380bf3ca - 音乐播放器：3D立体歌词开源播放器，支持网易云QQ音乐同步
+OBS鼠标缩放插件 - https://pan.quark.cn/s/03bbaa58a56e - 自动缩放鼠标对应的画面，放大和复位
+视频去字幕/去水印 - https://pan.quark.cn/s/6b5f23630e45 - 基于 AI 的开源工具，可以去除视频中的硬字幕、文本水印、logo 水印。
+MinerU - https://pan.quark.cn/s/11d4752c6a10 - AI 驱动的 PDF/文档智能解析，一键提取高精度文本、表格与公式
+
+
+
+
 VibeVoice - https://pan.quark.cn/s/xxxx - 语音识别与智能交互，AI 语音工具箱
 Win去字幕 - https://pan.quark.cn/s/xxxx - 视频去字幕工具，一键清除画面中的硬字幕
 Ollama - https://pan.quark.cn/s/xxxx - 本地运行大语言模型，LLaMA / Qwen / DeepSeek 开箱即用

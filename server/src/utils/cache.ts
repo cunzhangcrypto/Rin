@@ -1,4 +1,5 @@
 import { eq, and, like } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import type { DB } from "../core/hono-types";
 import { cache } from "../db/schema";
 import { path_join } from "./path";
@@ -6,7 +7,7 @@ import { getStorageObject, putStorageObjectAtKey } from "./storage";
 
 // Cache Utils for storing data in memory and persisting to database (with optional S3 backup)
 
-export type CacheStorageMode = 'database' | 's3';
+export type CacheStorageMode = 'database' | 's3' | 'kv';
 
 type CacheConfigReader = {
     getOrDefault<T>(key: string, defaultValue: T): Promise<T>;
@@ -183,6 +184,183 @@ class S3StorageProvider implements StorageProvider {
     }
 }
 
+// KV 配额跟踪器：用 D1 记录每日 KV 使用量，接近免费上限时自动降级
+const KV_READ_LIMIT = 80_000;      // 免费 100K/天，留 20% 余量
+const KV_WRITE_LIMIT = 800;        // 免费 1K/天，留 20% 余量
+const KV_DELETE_LIMIT = 800;       // 免费 1K/天（delete + list 共用）
+const KV_TTL_SECONDS = 24 * 60 * 60; // 缓存默认 24 小时过期，自动清理旧数据
+const KV_FLUSH_THRESHOLD = 50;     // 内存计数累计 50 次后批量写入 D1
+const KV_FLUSH_INTERVAL_MS = 30_000; // 或每 30 秒批量写入一次
+
+class KVQuotaTracker {
+    private reads = 0;
+    private writes = 0;
+    private deletes = 0;
+    private lastFlushAt = 0;
+
+    constructor(private db: DB) {
+        this.lastFlushAt = Date.now();
+    }
+
+    private get today() {
+        return new Date().toISOString().slice(0, 10); // UTC 日期
+    }
+
+    async ensureTable() {
+        try {
+            await this.db.run(sql`CREATE TABLE IF NOT EXISTS kv_quota (date TEXT PRIMARY KEY, reads INTEGER NOT NULL DEFAULT 0, writes INTEGER NOT NULL DEFAULT 0, deletes INTEGER NOT NULL DEFAULT 0)`);
+        } catch (e: any) {
+            console.error('KV quota table init failed', e?.message);
+        }
+    }
+
+    async flush(force = false) {
+        const total = this.reads + this.writes + this.deletes;
+        if (total === 0) return;
+        const shouldFlush = force || total >= KV_FLUSH_THRESHOLD || (Date.now() - this.lastFlushAt) >= KV_FLUSH_INTERVAL_MS;
+        if (!shouldFlush) return;
+        const reads = this.reads, writes = this.writes, deletes = this.deletes;
+        this.reads = 0; this.writes = 0; this.deletes = 0;
+        this.lastFlushAt = Date.now();
+        try {
+            await this.db.run(sql`
+                INSERT INTO kv_quota (date, reads, writes, deletes) VALUES (${this.today}, ${reads}, ${writes}, ${deletes})
+                ON CONFLICT(date) DO UPDATE SET
+                    reads = kv_quota.reads + ${reads},
+                    writes = kv_quota.writes + ${writes},
+                    deletes = kv_quota.deletes + ${deletes}
+            `);
+        } catch (e: any) {
+            console.error('KV quota flush failed', e?.message);
+        }
+    }
+
+    addRead(n = 1) { this.reads += n; this.flush(); }
+    addWrite(n = 1) { this.writes += n; this.flush(); }
+    addDelete(n = 1) { this.deletes += n; this.flush(); }
+
+    async usage(): Promise<{ reads: number; writes: number; deletes: number }> {
+        let stored = { reads: 0, writes: 0, deletes: 0 };
+        try {
+            const rows = (await this.db.all(sql`SELECT reads, writes, deletes FROM kv_quota WHERE date = ${this.today}`)) as any[];
+            if (rows && rows.length > 0) {
+                stored = {
+                    reads: Number(rows[0].reads) || 0,
+                    writes: Number(rows[0].writes) || 0,
+                    deletes: Number(rows[0].deletes) || 0,
+                };
+            }
+        } catch (e: any) {
+            console.error('KV quota read failed', e?.message);
+        }
+        return {
+            reads: stored.reads + this.reads,
+            writes: stored.writes + this.writes,
+            deletes: stored.deletes + this.deletes,
+        };
+    }
+}
+
+// KV 存储提供者：缓存写入 Cloudflare KV（边缘高速读取），配额超限自动降级
+class KVStorageProvider implements StorageProvider {
+    private quota: KVQuotaTracker;
+    private degraded = false; // 错误触发的降级（当前 Worker 实例内有效）
+
+    constructor(private db: DB, private kv: KVNamespace, private type: string) {
+        this.quota = new KVQuotaTracker(db);
+    }
+
+    private key(key: string) {
+        return `${this.type}:${key}`;
+    }
+
+    async load(): Promise<void> {
+        await this.quota.ensureTable();
+    }
+
+    async save(): Promise<void> {
+        await this.quota.flush(true);
+    }
+
+    async clear(): Promise<void> {
+        await this.quota.flush(true);
+    }
+
+    private async shouldSkipRead(): Promise<boolean> {
+        if (this.degraded) return true;
+        const usage = await this.quota.usage();
+        return usage.reads >= KV_READ_LIMIT;
+    }
+
+    private async shouldSkipWrite(): Promise<boolean> {
+        if (this.degraded) return true;
+        const usage = await this.quota.usage();
+        return usage.writes >= KV_WRITE_LIMIT;
+    }
+
+    private async shouldSkipDelete(): Promise<boolean> {
+        if (this.degraded) return true;
+        const usage = await this.quota.usage();
+        return usage.deletes >= KV_DELETE_LIMIT;
+    }
+
+    async get(key: string): Promise<any | undefined> {
+        if (await this.shouldSkipRead()) return undefined;
+        try {
+            const raw = await this.kv.get(this.key(key));
+            this.quota.addRead(1);
+            if (raw === null) return undefined;
+            try {
+                return JSON.parse(raw);
+            } catch {
+                return raw;
+            }
+        } catch (e: any) {
+            this.degraded = true;
+            return undefined;
+        }
+    }
+
+    async set(key: string, value: any): Promise<void> {
+        if (await this.shouldSkipWrite()) return;
+        try {
+            const valueStr = typeof value === 'string' ? value : JSON.stringify(value);
+            await this.kv.put(this.key(key), valueStr, { expirationTtl: KV_TTL_SECONDS });
+            this.quota.addWrite(1);
+        } catch (e: any) {
+            this.degraded = true;
+        }
+    }
+
+    async delete(key: string): Promise<void> {
+        if (await this.shouldSkipDelete()) return;
+        try {
+            await this.kv.delete(this.key(key));
+            this.quota.addDelete(1);
+        } catch (e: any) {
+            this.degraded = true;
+        }
+    }
+
+    // 按前缀批量删除（发文章时清缓存用），KV list 操作计入 delete 额度
+    async deletePrefix(prefix: string): Promise<void> {
+        if (await this.shouldSkipDelete()) return;
+        try {
+            let cursor: string | undefined;
+            do {
+                const list = await this.kv.list({ prefix: this.key(prefix), limit: 100, cursor });
+                this.quota.addDelete(1);
+                if (list.keys.length > 0) {
+                    await Promise.all(list.keys.map(k => this.kv.delete(k.name).then(() => this.quota.addDelete(1)).catch(() => {})));
+                }
+                cursor = list.list_complete ? undefined : list.cursor;
+            } while (cursor);
+        } catch (e: any) {
+            this.degraded = true;
+        }
+    }
+}
+
 export class CacheImpl {
     cache: Map<string, any> = new Map<string, any>();
     db: DB;
@@ -192,6 +370,7 @@ export class CacheImpl {
     private storageProvider: StorageProvider;
     private cacheEnabled: Promise<boolean> | null = null;
     private configReader?: CacheConfigReader;
+    private isKV: boolean = false;
 
     constructor(
         db: DB,
@@ -214,7 +393,10 @@ export class CacheImpl {
         const mode = storageMode ?? (env.CACHE_STORAGE_MODE as CacheStorageMode) ?? 's3';
 
         // 根据存储模式创建对应的提供者
-        if (mode === 's3') {
+        if (mode === 'kv' && env.CACHE_KV) {
+            this.storageProvider = new KVStorageProvider(db, env.CACHE_KV, type);
+            this.isKV = true;
+        } else if (mode === 's3') {
             this.storageProvider = new S3StorageProvider(env, this.cache, type);
         } else {
             this.storageProvider = new DatabaseStorageProvider(db, this.cache, type);
@@ -246,6 +428,9 @@ export class CacheImpl {
     }
 
     async all() {
+        if (this.isKV) {
+            return new Map<string, any>();
+        }
         if (!(await this.isEnabled())) {
             return new Map<string, any>();
         }
@@ -259,6 +444,12 @@ export class CacheImpl {
         if (!(await this.isEnabled())) {
             return null;
         }
+        if (this.isKV) {
+            if (!this.loaded) {
+                await this.load();
+            }
+            return await this.storageProvider.get(key);
+        }
         if (!this.loaded) {
             await this.load();
         }
@@ -266,6 +457,9 @@ export class CacheImpl {
     }
 
     async getByPrefix(prefix: string): Promise<any[]> {
+        if (this.isKV) {
+            return [];
+        }
         if (!(await this.isEnabled())) {
             return [];
         }
@@ -282,6 +476,9 @@ export class CacheImpl {
     }
 
     async getBySuffix(suffix: string): Promise<any[]> {
+        if (this.isKV) {
+            return [];
+        }
         if (!(await this.isEnabled())) {
             return [];
         }
@@ -323,6 +520,12 @@ export class CacheImpl {
         if (!(await this.isEnabled())) {
             return;
         }
+        if (this.isKV) {
+            if (!this.loaded)
+                await this.load();
+            await this.storageProvider.set(key, value);
+            return;
+        }
         if (!this.loaded)
             await this.load();
         this.cache.set(key, value);
@@ -332,6 +535,12 @@ export class CacheImpl {
     }
 
     async delete(key: string, save: boolean = true) {
+        if (this.isKV) {
+            if (!this.loaded)
+                await this.load();
+            await this.storageProvider.delete(key);
+            return;
+        }
         if (!this.loaded)
             await this.load();
         this.cache.delete(key);
@@ -341,6 +550,10 @@ export class CacheImpl {
     }
 
     async deletePrefix(prefix: string) {
+        if (this.isKV) {
+            await (this.storageProvider as KVStorageProvider).deletePrefix(prefix);
+            return;
+        }
         for (let key of this.cache.keys()) {
             console.log('Cache key', key);
             if (key.startsWith(prefix)) {
@@ -352,6 +565,9 @@ export class CacheImpl {
     }
 
     async deleteSuffix(suffix: string) {
+        if (this.isKV) {
+            return;
+        }
         for (let key of this.cache.keys()) {
             console.log("Cache key", key);
             if (key.endsWith(suffix)) {
