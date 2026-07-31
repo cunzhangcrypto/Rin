@@ -4,6 +4,7 @@ import {useCallback, useEffect, useState} from "react";
 import {Helmet} from "react-helmet";
 import {useTranslation} from "react-i18next";
 import Loading from 'react-loading';
+import {Link} from "wouter";
 import {ShowAlertType, useAlert} from '../components/dialog';
 import {Checkbox, Input} from "../components/input";
 import { DateTimeInput, FlatMetaRow, FlatPanel } from "@rin/ui";
@@ -260,7 +261,16 @@ export function WritingPage({ id }: { id?: number }) {
                 {id !== undefined ? t("update.title") : t("publish.title")}
               </p>
             </div>
-            <PublishButton className="w-auto" />
+            <div className="flex items-center gap-2">
+              <Link
+                href="/"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-black/10 px-5 py-3 text-sm font-medium t-primary transition-colors hover:bg-neutral-50 dark:border-white/10 dark:hover:bg-white/5"
+              >
+                <i className="ri-arrow-left-line" />
+                {t('back_to_list')}
+              </Link>
+              <PublishButton className="w-auto" />
+            </div>
           </div>
 
           <div className="mt-5 grid gap-4 lg:grid-cols-2">

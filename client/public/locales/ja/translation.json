@@ -170,6 +170,7 @@
   },
   "listed": "記事にリスト",
   "recommended": "おすすめに表示",
+  "back_to_list": "リストに戻る",
   "load_more": "もっと読み込む",
   "login": {
     "oauth_only": "続行するにはログインしてください",
