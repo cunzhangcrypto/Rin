@@ -12,6 +12,10 @@ not_found_handling = "single-page-application"
 [triggers]
 crons = ["*/20 * * * *"]
 
+[[kv_namespaces]]
+binding = "CACHE_KV"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+
 [vars]
 S3_FOLDER = "images/"
 S3_CACHE_FOLDER = "cache/"
@@ -24,7 +28,7 @@ WEBHOOK_URL = ""
 RSS_TITLE = "Web3村长"
 RSS_DESCRIPTION = "分享AIGC、互联网科技、跨境工具、网络媒体知识"
 SITE_URL = "https://www.cunzhangblog.com"
-CACHE_STORAGE_MODE = "database"
+CACHE_STORAGE_MODE = "kv"
 
 [[d1_databases]]
 binding = "DB"
