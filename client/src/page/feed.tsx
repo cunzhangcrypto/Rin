@@ -28,6 +28,82 @@ function toAbsoluteUrl(url?: string | null) {
   return `${window.location.origin}${url.startsWith("/") ? "" : "/"}${url}`;
 }
 
+type ToolItem = { name: string; url: string; desc: string };
+
+// 今日工具推荐：从 tools.md 随机抽取 2 个展示，刷新更换
+function TodayTools() {
+  const [tools, setTools] = useState<ToolItem[]>([]);
+  const [picked, setPicked] = useState<ToolItem[]>([]);
+
+  useEffect(() => {
+    fetch("/tools.md", { cache: "no-cache" })
+      .then((res) => res.text())
+      .then((text) => {
+        const items = text
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line && !line.startsWith("#"))
+          .map((line) => {
+            const parts = line.split(" - ");
+            const name = parts[0]?.trim();
+            const url = parts[1]?.trim();
+            const desc = parts.slice(2).join(" - ").trim();
+            if (!name || !url || !/^https?:\/\//.test(url)) return null;
+            return { name, url, desc };
+          })
+          .filter(Boolean) as ToolItem[];
+        setTools(items);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (tools.length === 0) return;
+    const shuffled = [...tools].sort(() => Math.random() - 0.5);
+    setPicked(shuffled.slice(0, 2));
+  }, [tools]);
+
+  if (picked.length === 0) return null;
+
+  return (
+    <div className="mt-6 rounded-[1.8rem] bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="flex items-center gap-2 font-bold text-gray-800 dark:text-gray-100 text-base">
+          <span>🛠️</span> 今日工具推荐
+        </h4>
+        <span className="text-[11px] font-medium text-teal-600 bg-teal-50 dark:bg-teal-900/40 dark:text-teal-400 rounded-full px-2.5 py-0.5">
+          每次刷新随机
+        </span>
+      </div>
+      {picked.map((tool) => (
+        <a
+          key={tool.name + tool.url}
+          href={tool.url}
+          target="_blank"
+          rel="noopener"
+          className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-all"
+        >
+          <span className="w-10 h-10 flex-shrink-0 flex items-center justify-center text-lg bg-gray-50 dark:bg-gray-700 rounded-lg">
+            {tool.name.slice(0, 1)}
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{tool.name}</span>
+            {tool.desc && (
+              <span className="block text-xs text-gray-400 dark:text-gray-400 truncate mt-0.5">{tool.desc}</span>
+            )}
+          </span>
+          <span className="flex-shrink-0 inline-flex items-center gap-1 text-[13px] font-medium text-white bg-teal-600 hover:bg-teal-700 rounded-full px-3.5 py-1.5 transition-colors">
+            下载 <span className="text-xs">→</span>
+          </span>
+        </a>
+      ))}
+      <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">
+        每次刷新随机展示 2 个工具 · 点击「下载」跳转夸克网盘
+      </p>
+    </div>
+  );
+}
+
 function extractFirstMarkdownImageUrl(content: string) {
   const match = /!\[.*?\]\((\S+?)(?:\s+"[^"]*")?\)/.exec(content);
   if (!match) {
@@ -353,6 +429,7 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
                   </div>
                 )}
                 <Markdown content={feed.content} />
+                <TodayTools />
                 <Reward />
                 {/* Author card */}
                 <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
