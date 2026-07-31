@@ -53,7 +53,7 @@ export const initContainerMiddleware = createMiddleware<{
             const { CacheImpl } = await import('../utils/cache');
             const clientConfig = await container.get('clientConfig', async () => profileAsync(c, "init_client_config", async () => {
                 const { CacheImpl } = await import('../utils/cache');
-                return new CacheImpl(db, c.env, "client.config");
+                return new CacheImpl(db, c.env, "client.config", "database");
             }));
             return new CacheImpl(db, c.env, "cache", undefined, clientConfig);
         }));
@@ -65,7 +65,7 @@ export const initContainerMiddleware = createMiddleware<{
 
         const clientConfig = await container.get('clientConfig', async () => profileAsync(c, "init_client_config", async () => {
                 const { CacheImpl } = await import('../utils/cache');
-                return new CacheImpl(db, c.env, "client.config");
+                return new CacheImpl(db, c.env, "client.config", "database");
             }));
 
         const jwt = await container.get('jwt', async () => profileAsync(c, "init_jwt", async () => {
