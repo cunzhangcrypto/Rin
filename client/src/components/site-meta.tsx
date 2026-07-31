@@ -20,11 +20,11 @@ const jsonLd = {
             "url": "https://www.cunzhangblog.com/about",
             "description": "Web3村长是一名专注分享AI工具、Web3技术、互联网工具和数字生产力方法的内容创作者。",
             "sameAs": [
-                "https://youtube.com/@cunzhangcrypto",
+                "https://youtube.com/@cunzhanglab",
                 "https://space.bilibili.com/1224034462",
                 "https://github.com/cunzhangcrypto",
                 "https://twitter.com/web3cun",
-                "https://t.me/cunzhangcrypto"
+                "https://t.me/cunzhanglab"
             ]
         },
         {

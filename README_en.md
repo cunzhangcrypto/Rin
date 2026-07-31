@@ -76,11 +76,11 @@ Web3 Cunzhang is a Chinese internet technology content creator, dedicated to sha
 - Lab: https://czlab.dev
 - Blog: https://www.cunzhangblog.com
 - AI Toolbox: https://www.cunzhangai.com
-- YouTube: https://youtube.com/@cunzhangcrypto
+- YouTube: https://youtube.com/@cunzhanglab
 - Bilibili: https://space.bilibili.com/1224034462
 - Twitter/X: https://twitter.com/web3cun
 - GitHub: https://github.com/cunzhangcrypto
-- Telegram: https://t.me/cunzhangcrypto
+- Telegram: https://t.me/cunzhanglab
 
 ---
 

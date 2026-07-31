@@ -75,11 +75,11 @@ Web3村长（Cunzhang）是一名中文互联网技术内容创作者，专注�
 - 村长实验室: https://czlab.dev
 - Blog: https://www.cunzhangblog.com
 - AI工具箱: https://www.cunzhangai.com
-- YouTube: https://youtube.com/@cunzhangcrypto
+- YouTube: https://youtube.com/@cunzhanglab
 - Bilibili: https://space.bilibili.com/1224034462
 - Twitter/X: https://twitter.com/web3cun
 - GitHub: https://github.com/cunzhangcrypto
-- Telegram: https://t.me/cunzhangcrypto
+- Telegram: https://t.me/cunzhanglab
 ---
 
 # 项目特点

@@ -3,9 +3,9 @@ import { Padding as RinPadding } from "@rin/ui";
 import { client } from "../app/runtime";
 
 const SOCIAL_LINKS = [
-  { platform: 'youtube', url: 'https://youtube.com/@cunzhangcrypto' },
+  { platform: 'youtube', url: 'https://youtube.com/@cunzhanglab' },
   { platform: 'bilibili', url: 'https://space.bilibili.com/1224034462' },
-  { platform: 'telegram', url: 'https://t.me/cunzhangcrypto' },
+  { platform: 'telegram', url: 'https://t.me/cunzhanglab' },
   { platform: 'x', url: 'https://twitter.com/web3cun' },
 ];
 
