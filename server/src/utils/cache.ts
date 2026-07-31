@@ -188,7 +188,6 @@ class S3StorageProvider implements StorageProvider {
 const KV_READ_LIMIT = 80_000;      // 免费 100K/天，留 20% 余量
 const KV_WRITE_LIMIT = 800;        // 免费 1K/天，留 20% 余量
 const KV_DELETE_LIMIT = 800;       // 免费 1K/天（delete + list 共用）
-const KV_TTL_SECONDS = 24 * 60 * 60; // 缓存默认 24 小时过期，自动清理旧数据
 const KV_FLUSH_THRESHOLD = 50;     // 内存计数累计 50 次后批量写入 D1
 const KV_FLUSH_INTERVAL_MS = 30_000; // 或每 30 秒批量写入一次
 
@@ -325,7 +324,9 @@ class KVStorageProvider implements StorageProvider {
         if (await this.shouldSkipWrite()) return;
         try {
             const valueStr = typeof value === 'string' ? value : JSON.stringify(value);
-            await this.kv.put(this.key(key), valueStr, { expirationTtl: KV_TTL_SECONDS });
+            // 永久缓存：内容变更依赖发布/更新/删除时的 deletePrefix 清理（clearFeedCache 等），
+            // 避免 TTL 过期后首次访问重新 miss 导致的慢
+            await this.kv.put(this.key(key), valueStr);
             this.quota.addWrite(1);
         } catch (e: any) {
             this.degraded = true;

@@ -1,6 +1,6 @@
 import { and, asc, count, desc, eq, gt, like, lt, ne, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
-import type { Variables } from "../core/hono-types";
+import type { CacheImpl, DB, Variables } from "../core/hono-types";
 import { profileAsync } from "../core/server-timing";
 import { feeds, visits, visitStats } from "../db/schema";
 import { HyperLogLog } from "../utils/hyperloglog";
@@ -23,6 +23,74 @@ async function initWPModules() {
         const h2m = await import("html-to-md");
         html2md = h2m.default;
     }
+}
+
+// 查询一页公开/私有文章列表（不缓存），供列表接口与发布后预填复用
+async function buildFeedListData(
+    db: DB,
+    type: string | undefined,
+    page_num: number,
+    limit_num: number,
+    withSensitive: boolean,
+) {
+    const where = type === 'draft'
+        ? eq(feeds.draft, 1)
+        : type === 'unlisted'
+            ? and(eq(feeds.draft, 0), eq(feeds.listed, 0))
+            : and(eq(feeds.draft, 0), eq(feeds.listed, 1));
+
+    const size = await db.select({ count: count() }).from(feeds).where(where);
+
+    if (size[0].count === 0) {
+        return { size: 0, data: [], hasNext: false };
+    }
+
+    const feed_list = (await db.query.feeds.findMany({
+        where,
+        columns: withSensitive ? undefined : { draft: false, listed: false },
+        with: {
+            hashtags: {
+                columns: {},
+                with: {
+                    hashtag: { columns: { id: true, name: true } }
+                }
+            },
+            user: { columns: { id: true, username: true, avatar: true } }
+        },
+        orderBy: [desc(feeds.top), desc(feeds.createdAt), desc(feeds.updatedAt)],
+        offset: page_num * limit_num,
+        limit: limit_num + 1,
+    })).map(({ content, hashtags, summary, ...other }: any) => {
+        const avatar = extractImageWithMetadata(content);
+        return {
+            summary: summary.length > 0 ? summary : content.length > 100 ? content.slice(0, 100) : content,
+            hashtags: hashtags.map(({ hashtag }: any) => hashtag),
+            avatar,
+            ...other
+        };
+    });
+
+    let hasNext = false;
+    if (feed_list.length === limit_num + 1) {
+        feed_list.pop();
+        hasNext = true;
+    }
+
+    return { size: size[0].count, data: feed_list, hasNext };
+}
+
+// 发布/更新/删除/置顶后：重算所有公开分页并写入 KV，保证新内容首个访客也秒开
+async function prewarmFeedListCache(db: DB, cache: CacheImpl) {
+    const where = and(eq(feeds.draft, 0), eq(feeds.listed, 1));
+    const totalSize = await db.select({ count: count() }).from(feeds).where(where);
+    const limit = 20;
+    const totalPages = Math.max(1, Math.ceil((totalSize[0].count || 0) / limit));
+
+    await Promise.all(Array.from({ length: totalPages }, (_, i) => {
+        const page_num = i;
+        return buildFeedListData(db, undefined, page_num, limit, false)
+            .then((data) => cache.set(`feeds_undefined_${page_num}_${limit}`, data));
+    }));
 }
 
 export function FeedService(): Hono<{
@@ -50,60 +118,11 @@ export function FeedService(): Hono<{
         const page_num = (page ? parseInt(page) > 0 ? parseInt(page) : 1 : 1) - 1;
         const limit_num = limit ? parseInt(limit) > 50 ? 50 : parseInt(limit) : 20;
         const cacheKey = `feeds_${type}_${page_num}_${limit_num}`;
-        const cached = await profileAsync(c, 'feed_list_cache_get', () => cache.get(cacheKey));
 
-        if (cached) {
-            return c.json(cached);
-        }
-
-        const where = type === 'draft'
-            ? eq(feeds.draft, 1)
-            : type === 'unlisted'
-                ? and(eq(feeds.draft, 0), eq(feeds.listed, 0))
-                : and(eq(feeds.draft, 0), eq(feeds.listed, 1));
-
-        const size = await profileAsync(c, 'feed_list_count', () => db.select({ count: count() }).from(feeds).where(where));
-
-        if (size[0].count === 0) {
-            return c.json({ size: 0, data: [], hasNext: false });
-        }
-
-        const feed_list = (await profileAsync(c, 'feed_list_db', () => db.query.feeds.findMany({
-            where: where,
-            columns: admin ? undefined : { draft: false, listed: false },
-            with: {
-                hashtags: {
-                    columns: {},
-                    with: {
-                        hashtag: { columns: { id: true, name: true } }
-                    }
-                },
-                user: { columns: { id: true, username: true, avatar: true } }
-            },
-            orderBy: [desc(feeds.top), desc(feeds.createdAt), desc(feeds.updatedAt)],
-            offset: page_num * limit_num,
-            limit: limit_num + 1,
-        }))).map(({ content, hashtags, summary, ...other }: any) => {
-            const avatar = extractImageWithMetadata(content);
-            return {
-                summary: summary.length > 0 ? summary : content.length > 100 ? content.slice(0, 100) : content,
-                hashtags: hashtags.map(({ hashtag }: any) => hashtag),
-                avatar,
-                ...other
-            };
-        });
-
-        let hasNext = false;
-        if (feed_list.length === limit_num + 1) {
-            feed_list.pop();
-            hasNext = true;
-        }
-
-        const data = { size: size[0].count, data: feed_list, hasNext };
-
-        if (type === undefined || type === 'normal' || type === '') {
-            await profileAsync(c, 'feed_list_cache_set', () => cache.set(cacheKey, data));
-        }
+        // draft/unlisted 仅管理员可见，不缓存；公开列表走 KV 缓存
+        const data = type === 'draft' || type === 'unlisted'
+            ? await buildFeedListData(db, type, page_num, limit_num, Boolean(admin))
+            : await profileAsync(c, 'feed_list_cache_get', () => cache.getOrSet(cacheKey, () => buildFeedListData(db, type, page_num, limit_num, Boolean(admin))));
 
         return c.json(data);
     });
@@ -211,6 +230,8 @@ export function FeedService(): Hono<{
             resetSummary: true,
         }));
         await profileAsync(c, 'feed_create_cache_invalidate', () => cache.deletePrefix('feeds_'));
+        // 预填所有公开分页缓存，保证发布后首个访客也秒开
+        await profileAsync(c, 'feed_create_cache_prewarm', () => prewarmFeedListCache(db, cache));
 
         if (result.length === 0) {
             return c.text('Failed to insert', 500);
@@ -470,6 +491,7 @@ export function FeedService(): Hono<{
         }
 
         await profileAsync(c, 'feed_update_cache_invalidate', () => clearFeedCache(cache, id_num, feed.alias, alias || null));
+        await profileAsync(c, 'feed_update_cache_prewarm', () => prewarmFeedListCache(db, cache));
         return c.text('Updated');
     });
 
@@ -496,6 +518,7 @@ export function FeedService(): Hono<{
 
         await profileAsync(c, 'feed_top_db', () => db.update(feeds).set({ top }).where(eq(feeds.id, feed.id)));
         await profileAsync(c, 'feed_top_cache_invalidate', () => clearFeedCache(cache, feed.id, null, null));
+        await profileAsync(c, 'feed_top_cache_prewarm', () => prewarmFeedListCache(db, cache));
         return c.text('Updated');
     });
 
@@ -520,6 +543,7 @@ export function FeedService(): Hono<{
 
         await profileAsync(c, 'feed_delete_db', () => db.delete(feeds).where(eq(feeds.id, id_num)));
         await profileAsync(c, 'feed_delete_cache_invalidate', () => clearFeedCache(cache, id_num, feed.alias, null));
+        await profileAsync(c, 'feed_delete_cache_prewarm', () => prewarmFeedListCache(db, cache));
         return c.text('Deleted');
     });
     return app;
