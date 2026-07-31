@@ -448,7 +448,7 @@ export class CacheImpl {
             if (!this.loaded) {
                 await this.load();
             }
-            return await this.storageProvider.get(key);
+            return await (this.storageProvider as KVStorageProvider).get(key);
         }
         if (!this.loaded) {
             await this.load();
@@ -523,7 +523,7 @@ export class CacheImpl {
         if (this.isKV) {
             if (!this.loaded)
                 await this.load();
-            await this.storageProvider.set(key, value);
+            await (this.storageProvider as KVStorageProvider).set(key, value);
             return;
         }
         if (!this.loaded)
