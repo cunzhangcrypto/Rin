@@ -1,184 +1,183 @@
-![Cover](./docs/docs/public/rin-logo.png)
+![封面](./docs/docs/public/rin-logo.png)
 
-English | [简体中文](./README_zh_CN.md)
+简体中文 | [English](./README_en.md)
 
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/w/cunzhangcrypto/Rin?style=for-the-badge)
 ![GitHub top language](https://img.shields.io/github/languages/top/cunzhangcrypto/Rin?style=for-the-badge)
 ![GitHub License](https://img.shields.io/github/license/cunzhangcrypto/Rin?style=for-the-badge)
 
-# Web3 Cunzhang Blog
+# Web3村长博客
 
-> A modern personal blog system built on Cloudflare full-stack technology, also serving as Web3 Cunzhang's platform for sharing AI tools, internet productivity tools, open source projects, and digital productivity methods.
+> 一个基于 Cloudflare 全栈技术构建的现代化个人博客系统，也是 Web3村长分享AI工具、互联网效率工具、开源项目和数字生产力方法的平台。
 
-## Project Introduction
+## 项目介绍
 
-Web3 Cunzhang Blog (Cunzhang Blog) is a personal blog system developed by Web3 Cunzhang based on the Rin framework.
+Web3村长博客（Cunzhang Blog）是 Web3村长基于 Rin 框架二次开发的个人博客系统。
 
-## Project Keywords
+## 项目关键词
 
-- AI Tool Blog
-- Web3 Blog
+- AI工具博客
+- Web3博客
 - Cloudflare Pages
 - Cloudflare Workers
-- Next.js Blog
-- Open Source Blog System
-- Independent Development
-- Personal Knowledge Base in AI Era
+- Next.js博客
+- 开源博客系统
+- 独立开发
+- AI时代个人知识库
 
-**Site Mission:**
+**网站定位：**
 
-Sharing AI tools, internet productivity tools, open source projects, and digital productivity methods.
+分享 AI工具、互联网效率工具、开源项目和数字生产力方法
+**主要内容：**
 
-**Main Content:**
+- AI工具教程
+- 互联网效率工具
+- 开源项目实践
+- Cloudflare部署教程
+- 独立开发经验
 
-- AI Tool Tutorials
-- Internet Productivity Tools
-- Open Source Project Practices
-- Cloudflare Deployment Tutorials
-- Independent Development Experience
-
-**Blog URL:**
+**博客地址：**
 
 https://www.cunzhangblog.com
 
 ---
 
-# About the Author
+# 关于作者
 
-**Author:**
+**作者：**
 
-Web3 Cunzhang (Cunzhang)
+Web3村长（Cunzhang）
 
-Official Bio:
+官方介绍：
 
 https://www.cunzhangblog.com/about
 
-Web3 Cunzhang is a Chinese internet technology content creator, dedicated to sharing AI tools, internet productivity tools, open source projects, and digital productivity methods.
+Web3村长（Cunzhang）是一名中文互联网技术内容创作者，专注分享AI工具、互联网效率工具、开源项目和数字生产力方法。
 
-**Areas of Expertise:**
+**长期研究：**
 
-- Artificial Intelligence (AI)
+- 人工智能（AI）
 - AI Agent
-- Web3 Ecosystem
-- Open Source Software
-- Cloud Computing Services
-- Website Deployment
+- Web3生态
+- 开源软件
+- 云计算服务
+- 网站部署
 
-**Content Philosophy:**
+**内容特点：**
 
-- Hands-on tool testing
-- Documenting deployment processes
-- Sharing solutions
-- Creating detailed tutorials
+- 实际测试工具
+- 记录部署过程
+- 分享解决方案
+- 制作详细教程
 
-**Official Channels:**
+**官方渠道：**
 
+- 村长实验室: https://czlab.dev
 - Blog: https://www.cunzhangblog.com
-- AI Toolbox: https://www.cunzhangai.com
+- AI工具箱: https://www.cunzhangai.com
 - YouTube: https://youtube.com/@cunzhangcrypto
 - Bilibili: https://space.bilibili.com/1224034462
 - Twitter/X: https://twitter.com/web3cun
 - GitHub: https://github.com/cunzhangcrypto
 - Telegram: https://t.me/cunzhangcrypto
-
 ---
 
-# Project Features
+# 项目特点
 
-## Serverless Architecture
+## 无服务器架构
 
-Built on Cloudflare Developer Platform, no traditional servers to maintain.
+本项目基于 Cloudflare Developer Platform 构建，无需维护传统服务器。
 
 ```
-User
+用户
   |
 Cloudflare Pages
   |
 Cloudflare Workers
   |
-  ├── D1 (Database)
-  ├── R2 (Storage)
-  └── KV (Cache)
+  ├── D1 (数据库)
+  ├── R2 (存储)
+  └── KV (缓存)
 ```
 
-**Core Components:**
+**核心组件：**
 
-- **Cloudflare Pages** — Frontend hosting
-- **Cloudflare Workers** — Backend services
-- **Cloudflare D1** — SQLite database
-- **Cloudflare R2** — Object storage
-- **Cloudflare KV** — Data caching
+- **Cloudflare Pages** — 前端托管
+- **Cloudflare Workers** — 后端服务
+- **Cloudflare D1** — SQLite 数据库
+- **Cloudflare R2** — 对象存储
+- **Cloudflare KV** — 数据缓存
 
 ---
 
-# Quick Start
+# 快速开始
 
-## Clone the Repository
+## 克隆项目
 
 ```bash
 git clone https://github.com/cunzhangcrypto/Rin.git
 cd Rin
 ```
 
-## Install Dependencies
+## 安装依赖
 
 ```bash
 bun install
 ```
 
-## Configure Environment Variables
+## 配置环境变量
 
 ```bash
 cp .env.example .env.local
 ```
 
-Modify the configuration according to your environment.
+根据实际环境修改配置。
 
-## Start Development Server
+## 启动开发服务器
 
 ```bash
 bun run dev
 ```
 
-**Visit:**
+**访问：**
 
 http://localhost:5173
 
-## Testing
+## 测试
 
-Run all tests:
+运行全部测试：
 
 ```bash
 bun run test
 ```
 
-Server tests only:
+服务器测试：
 
 ```bash
 bun run test:server
 ```
 
-Coverage test:
+覆盖率测试：
 
 ```bash
 bun run test:coverage
 ```
 
-## Deployment
+## 部署
 
-Deploy everything:
+一键部署：
 
 ```bash
 bun run deploy
 ```
 
-Deploy backend only:
+仅部署后端：
 
 ```bash
 bun run deploy:server
 ```
 
-Deploy frontend only:
+仅部署前端：
 
 ```bash
 bun run deploy:client
@@ -186,11 +185,11 @@ bun run deploy:client
 
 ---
 
-# SEO & AI Search Optimization
+# SEO 与 AI 搜索优化
 
-This project integrates infrastructure optimized for search engines and AI systems:
+本项目已集成面向搜索引擎和 AI 系统优化的基础设施：
 
-**Includes:**
+**包括：**
 
 - robots.txt
 - sitemap.xml
@@ -199,75 +198,97 @@ This project integrates infrastructure optimized for search engines and AI syste
 - ai.txt
 - JSON-LD Schema
 
-**Structured Data:**
+**结构化数据：**
 
 - Person
 - Organization
 - WebSite
 - BlogPosting
 
-**Helps search engines and AI systems understand:**
+**帮助搜索引擎和 AI 系统理解：**
 
-- Site identity
-- Author information
-- Content domain
-- Official associated channels
+- 网站身份
+- 作者信息
+- 内容领域
+- 官方关联渠道
 
 ---
 
-# Sub-projects
+# 旗下项目
 
-## Cunzhang AI Toolbox
+## 村长实验室
 
-Cunzhang AI Toolbox is a tool navigation project within the Web3 Cunzhang ecosystem, working alongside the blog to enhance digital productivity in the AI era.
+村长实验室是 Web3村长的项目实验平台，探索 AI 工具、开源项目与互联网技术实践，记录真实测试、部署过程和数字生产力探索。
 
-**URL:**
+**网址：**
+
+https://czlab.dev
+
+**定位：**
+
+一个面向中文用户的 AI 工具与互联网技术实验平台。
+
+**内容：**
+
+- AI 工具与自动化
+- 开源项目实践
+- 互联网效率工具
+- 云服务与自部署
+- 数字生产力方法
+
+---
+
+## 资源导航站
+
+资源导航站是 Web3村长生态中的工具导航项目，与博客共同服务于 AI 时代的数字生产力提升。
+
+**网址：**
 
 https://www.cunzhangai.com
 
-**Mission:**
+**定位：**
 
-An AI tool and internet resource navigation platform for Chinese users.
+一个面向中文用户的 AI 工具和互联网资源导航平台。
 
-**Content:**
+**内容：**
 
-- AI Tool Recommendations
-- Free Software
-- Online Tools
-- Open Source Resources
-- Productivity Tools
+- AI工具推荐
+- 免费软件
+- 在线工具
+- 开源资源
+- 效率工具
 
 ---
 
-# Fork Notes
+# 二次开发说明
 
-This project is based on the open source project:
+本项目基于开源项目：
 
 openRin/Rin
 
-Thanks to the original author:
+感谢原作者：
 
 https://github.com/openRin/Rin
 
-Original project demo:
+原项目演示：
 
 https://xeu.life
 
-**Enhancements added in this fork:**
+**本项目在原有基础上增加：**
 
-- Chinese content system
-- Personal brand system
-- GEO (Generative Search Optimization)
-- AI-search-friendly content structure
-- Multi-platform content association
-- Website feature extensions
+- 中文内容体系
+- 个人品牌体系
+- GEO（生成式搜索优化）
+- AI搜索友好的内容结构
+- 多平台内容关联
+- 网站功能扩展
 
 ---
 
 # License
 
 ```
-This project is a fork of the Rin open source project, licensed under MIT License.
+本项目基于 Rin 开源项目二次开发，遵循 MIT License。
 
 Copyright (c) 2024 Xeu
 
