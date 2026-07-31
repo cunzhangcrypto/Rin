@@ -1,9 +1,10 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { getApp } from "./app-instance";
 
 const ROOT_FEED_PATTERN = /^\/(rss\.xml|atom\.xml|rss\.json|feed\.json|feed\.xml|sitemap-posts\.json)$/;
 const APP_PUBLIC_ROUTE_PATTERN = /^\/(favicon)(?:\/|$)/;
+const LEGACY_FEED_PATH_PATTERN = /^\/feed\/[^/]+$/;
 
 const SKIP_SEO_ROUTES = new Set(["/login", "/callback", "/profile", "/user/github"]);
 
@@ -80,6 +81,30 @@ function injectMeta(html: string, title: string, description: string, structured
   }
 
   return result;
+}
+
+// 旧版 /feed/:id 链接：若文章有别名，301 重定向到根路径别名，保证全站统一用别名 URL
+async function tryRedirectLegacyFeedPath(request: Request, env: Env): Promise<Response | null> {
+  const url = new URL(request.url);
+  if (!env.DB) return null;
+
+  const schema = await import("../db/schema");
+  const db = drizzle(env.DB, { schema });
+  const id = url.pathname.replace(/^\/feed\//, "");
+  const id_num = parseInt(id);
+
+  try {
+    const feed = await db.query.feeds.findFirst({
+      where: or(eq(schema.feeds.id, id_num), eq(schema.feeds.alias, id)),
+      columns: { alias: true },
+    });
+
+    if (feed?.alias && `/${feed.alias}` !== url.pathname) {
+      return Response.redirect(`${url.origin}/${feed.alias}`, 301);
+    }
+  } catch {}
+
+  return null;
 }
 
 async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Response | null> {
@@ -189,6 +214,14 @@ export async function handleFetch(request: Request, env: Env): Promise<Response>
     const asset = await tryServeAsset(request, env);
     if (asset) {
       return asset;
+    }
+  }
+
+  // 旧版 /feed/:id（数字或别名）链接：有别名则 301 到根路径别名
+  if (LEGACY_FEED_PATH_PATTERN.test(pathname)) {
+    const legacyRedirect = await tryRedirectLegacyFeedPath(request, env);
+    if (legacyRedirect) {
+      return legacyRedirect;
     }
   }
 

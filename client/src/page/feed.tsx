@@ -30,13 +30,42 @@ function toAbsoluteUrl(url?: string | null) {
 
 type ToolItem = { name: string; url: string; desc: string };
 
+// 工具名称+描述关键词 → emoji 图标自动匹配（按顺序，第一个命中的生效）
+const TOOL_EMOJI_MAP: [RegExp, string][] = [
+  [/pdf|word|文档/i, "📄"],
+  [/音乐|播放器/i, "🎵"],
+  [/下载|idm|gopeed|reclip/i, "⬇️"],
+  [/录屏|屏幕|obs/i, "🖥️"],
+  [/浏览器|chrome|插件/i, "🌐"],
+  [/清理|卸载|禁止更新/i, "🧹"],
+  [/水印/i, "🖼️"],
+  [/语音|voice|声音/i, "🎙️"],
+  [/qwen|ai|大模型|llm|模型/i, "🤖"],
+  [/ppt/i, "📊"],
+  [/网盘|转存/i, "☁️"],
+  [/ffmpeg|压缩|转码/i, "🎞️"],
+  [/文件传输|传输/i, "📁"],
+  [/投屏|手机/i, "📱"],
+  [/复制/i, "📋"],
+  [/字幕|剪辑|剪映|视频/i, "🎬"],
+  [/ocr|识别/i, "🔍"],
+];
+
+function getToolEmoji(name: string, desc: string): string {
+  const text = `${name} ${desc}`;
+  for (const [pattern, emoji] of TOOL_EMOJI_MAP) {
+    if (pattern.test(text)) return emoji;
+  }
+  return "📦";
+}
+
 // 今日工具推荐：从 tools.md 随机抽取 2 个展示，刷新更换
 function TodayTools() {
   const [tools, setTools] = useState<ToolItem[]>([]);
   const [picked, setPicked] = useState<ToolItem[]>([]);
 
   useEffect(() => {
-    fetch("/tools.md", { cache: "no-cache" })
+    fetch("/tools.md")
       .then((res) => res.text())
       .then((text) => {
         const items = text
@@ -84,7 +113,7 @@ function TodayTools() {
           className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-all"
         >
           <span className="w-10 h-10 flex-shrink-0 flex items-center justify-center text-lg bg-gray-50 dark:bg-gray-700 rounded-lg">
-            {tool.name.slice(0, 1)}
+            {getToolEmoji(tool.name, tool.desc)}
           </span>
           <span className="flex-1 min-w-0">
             <span className="block text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{tool.name}</span>
@@ -180,6 +209,11 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
         if (error) {
           setError(error.value as string);
         } else if (data && typeof data !== "string") {
+          // 旧版数字链接 /feed/113 或别名路径不一致时，统一跳转到根路径别名
+          if (data.alias && id !== data.alias) {
+            setLocation(`/${data.alias}`, { replace: true });
+            return;
+          }
           setTimeout(() => {
             setFeed(data as any);
             setTop(data.top || 0);

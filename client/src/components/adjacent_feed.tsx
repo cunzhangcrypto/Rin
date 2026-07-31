@@ -41,8 +41,9 @@ export function AdjacentCard({data, type}: { data: AdjacentFeed | null | undefin
             </h1>
         </div>);
     }
+    const href = data.alias ? `/${data.alias}` : `/feed/${data.id}`;
     return (
-        <Link href={`/feed/${data.id}`} target="_blank"
+        <Link href={href} target="_blank"
               className={`w-full p-6 duration-300 bg-button ${radius}`}>
             <p className={`t-secondary w-full ${direction}`}>
                 {type === "previous" ? "Previous" : "Next"}

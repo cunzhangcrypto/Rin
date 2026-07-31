@@ -71,14 +71,15 @@ export function CommentService(): Hono {
             webhookBodyTemplate,
         } = await profileAsync(c, 'comment_create_webhook_config', () => resolveWebhookConfig(serverConfig, env));
         const frontendUrl = new URL(c.req.url).origin;
+        const feedUrl = exist.alias ? `${frontendUrl}/${exist.alias}` : `${frontendUrl}/feed/${feedId}`;
         try {
             await profileAsync(c, 'comment_create_notify', () => notify(
                 webhookUrl || "",
                 {
                     event: "comment.created",
-                    message: `${frontendUrl}/feed/${feedId}\n${user.username} 评论了: ${exist.title}\n${content}`,
+                    message: `${feedUrl}\n${user.username} 评论了: ${exist.title}\n${content}`,
                     title: exist.title || "",
-                    url: `${frontendUrl}/feed/${feedId}`,
+                    url: feedUrl,
                     username: user.username,
                     content,
                 },

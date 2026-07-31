@@ -25,6 +25,7 @@ export interface Feed {
   summary: string;
   content: string;
   uid: number;
+  alias?: string | null;
   createdAt: string;
   updatedAt: string;
   ai_summary: string;
@@ -65,7 +66,13 @@ export interface FeedListResponse {
 export interface TimelineItem {
   id: number;
   title: string | null;
+  alias?: string | null;
   createdAt: string;
+}
+
+export interface CreateFeedResponse {
+  insertedId: number;
+  alias?: string | null;
 }
 
 export interface CreateFeedRequest {
@@ -95,6 +102,7 @@ export interface AdjacentFeed {
   id: number;
   title: string | null;
   summary: string;
+  alias?: string | null;
   hashtags: Array<{ id: number; name: string }>;
   createdAt: string;
   updatedAt: string;

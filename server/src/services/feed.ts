@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gt, like, lt, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, like, lt, ne, or } from "drizzle-orm";
 import { Hono } from "hono";
 import type { Variables } from "../core/hono-types";
 import { profileAsync } from "../core/server-timing";
@@ -115,7 +115,7 @@ export function FeedService(): Hono<{
 
         return c.json(await profileAsync(c, 'feed_timeline_db', () => db.query.feeds.findMany({
             where: where,
-            columns: { id: true, title: true, createdAt: true },
+            columns: { id: true, title: true, alias: true, createdAt: true },
             orderBy: [desc(feeds.createdAt), desc(feeds.updatedAt)],
         })));
     });
@@ -150,6 +150,20 @@ export function FeedService(): Hono<{
             return c.text('Content already exists', 400);
         }
 
+        const trimmedAlias = typeof alias === "string" ? alias.trim() : undefined;
+        const normalizedAlias = trimmedAlias || undefined;
+
+        if (normalizedAlias) {
+            const aliasExist = await profileAsync(c, 'feed_create_alias_check', () => db.query.feeds.findFirst({
+                where: eq(feeds.alias, normalizedAlias),
+                columns: { id: true }
+            }));
+
+            if (aliasExist) {
+                return c.text('别名已存在，请更换后重试', 400);
+            }
+        }
+
         const date = createdAt ? new Date(createdAt) : new Date();
 
         if (!uid) {
@@ -164,7 +178,7 @@ export function FeedService(): Hono<{
             ai_summary_status: "idle",
             ai_summary_error: "",
             uid,
-            alias,
+            alias: normalizedAlias,
             listed: listed ? 1 : 0,
             draft: draft ? 1 : 0,
             createdAt: date,
@@ -182,7 +196,7 @@ export function FeedService(): Hono<{
         if (result.length === 0) {
             return c.text('Failed to insert', 500);
         } else {
-            return c.json(result[0]);
+            return c.json({ insertedId: result[0].insertedId, alias: normalizedAlias || null });
         }
     });
 
@@ -310,6 +324,7 @@ export function FeedService(): Hono<{
                 const cacheData = {
                     id: feed.id,
                     title: feed.title,
+                    alias: feed.alias,
                     summary: summary,
                     hashtags: hashtags_flatten,
                     createdAt: feed.createdAt,
@@ -388,6 +403,20 @@ export function FeedService(): Hono<{
             return c.text('Permission denied', 403);
         }
 
+        const trimmedAlias = typeof alias === "string" ? alias.trim() : undefined;
+        const normalizedAlias = trimmedAlias === undefined ? undefined : (trimmedAlias || null);
+
+        if (normalizedAlias) {
+            const aliasExist = await profileAsync(c, 'feed_update_alias_check', () => db.query.feeds.findFirst({
+                where: and(eq(feeds.alias, normalizedAlias), ne(feeds.id, id_num)),
+                columns: { id: true }
+            }));
+
+            if (aliasExist) {
+                return c.text('别名已存在，请更换后重试', 400);
+            }
+        }
+
         const contentChanged = content && content !== feed.content;
         const isDraft = draft !== undefined ? draft : (feed.draft === 1);
         const shouldQueueAISummary = (contentChanged && !isDraft) || (!isDraft && feed.draft === 1 && !feed.ai_summary);
@@ -400,7 +429,7 @@ export function FeedService(): Hono<{
             ai_summary: shouldQueueAISummary ? "" : undefined,
             ai_summary_status: isDraft ? "idle" : undefined,
             ai_summary_error: shouldQueueAISummary || isDraft ? "" : undefined,
-            alias,
+            alias: normalizedAlias,
             top,
             listed: listed ? 1 : 0,
             draft: draft === undefined ? undefined : draft ? 1 : 0,

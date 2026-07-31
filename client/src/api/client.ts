@@ -12,6 +12,7 @@ import type {
   FeedListResponse,
   TimelineItem,
   CreateFeedRequest,
+  CreateFeedResponse,
   UpdateFeedRequest,
   AdjacentFeedResponse,
   UserProfile,
@@ -300,8 +301,8 @@ class FeedAPI {
   }
 
   // POST /api/feed
-  async create(body: CreateFeedRequest): Promise<ApiResponse<{ insertedId: number }>> {
-    return this.http.post<{ insertedId: number }>("/api/feed", body);
+  async create(body: CreateFeedRequest): Promise<ApiResponse<CreateFeedResponse>> {
+    return this.http.post<CreateFeedResponse>("/api/feed", body);
   }
 
   // POST /api/feed/:id
