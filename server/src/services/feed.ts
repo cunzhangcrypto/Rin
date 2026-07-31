@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gt, like, lt, ne, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, like, lt, ne, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import type { Variables } from "../core/hono-types";
 import { profileAsync } from "../core/server-timing";
@@ -120,6 +120,24 @@ export function FeedService(): Hono<{
         })));
     });
 
+    // GET /feed/recommend - 推荐阅读：已发布且标记 recommended 的文章，随机取 10 条
+    // 按「北京时区日期」缓存 24 小时，一天内固定一批，第二天自动换新
+    app.get('/recommend', async (c) => {
+        const db = c.get('db');
+        const cache = c.get('cache');
+        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
+        const cacheKey = `recommend_${today}`;
+
+        const data = await profileAsync(c, 'feed_recommend', () => cache.getOrSet(cacheKey, () => db.query.feeds.findMany({
+            where: and(eq(feeds.draft, 0), eq(feeds.listed, 1), eq(feeds.recommended, 1)),
+            columns: { id: true, title: true, alias: true },
+            orderBy: sql`RANDOM()`,
+            limit: 10,
+        })));
+
+        return c.json(data);
+    });
+
     // POST /feed - Create feed
     app.post('/', async (c) => {
         const db = c.get('db');
@@ -129,7 +147,7 @@ export function FeedService(): Hono<{
         const admin = c.get('admin');
         const uid = c.get('uid');
         const body = await profileAsync(c, 'feed_create_parse', () => c.req.json());
-        const { title, alias, listed, content, summary, draft, tags, createdAt } = body;
+        const { title, alias, listed, content, summary, draft, tags, recommended, createdAt } = body;
 
         if (!admin) {
             return c.text('Permission denied', 403);
@@ -181,6 +199,7 @@ export function FeedService(): Hono<{
             alias: normalizedAlias,
             listed: listed ? 1 : 0,
             draft: draft ? 1 : 0,
+            recommended: recommended ? 1 : 0,
             createdAt: date,
             updatedAt: date
         }).returning({ insertedId: feeds.id }));
@@ -390,7 +409,7 @@ export function FeedService(): Hono<{
         const uid = c.get('uid');
         const id = c.req.param('id');
         const body = await profileAsync(c, 'feed_update_parse', () => c.req.json());
-        const { title, listed, content, summary, alias, draft, top, tags, createdAt } = body;
+        const { title, listed, content, summary, alias, draft, top, tags, recommended, createdAt } = body;
 
         const id_num = parseInt(id);
         const feed = await profileAsync(c, 'feed_update_lookup', () => db.query.feeds.findFirst({ where: eq(feeds.id, id_num) }));
@@ -433,6 +452,7 @@ export function FeedService(): Hono<{
             top,
             listed: listed ? 1 : 0,
             draft: draft === undefined ? undefined : draft ? 1 : 0,
+            recommended: recommended === undefined ? undefined : recommended ? 1 : 0,
             createdAt: createdAt ? new Date(createdAt) : undefined,
             updatedAt: updateTime
         }).where(eq(feeds.id, id_num)));

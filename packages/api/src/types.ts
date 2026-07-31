@@ -82,6 +82,7 @@ export interface CreateFeedRequest {
   alias?: string;
   draft: boolean;
   listed: boolean;
+  recommended?: boolean;
   createdAt?: string;
   tags: string[];
 }
@@ -93,6 +94,7 @@ export interface UpdateFeedRequest {
   alias?: string;
   listed: boolean;
   draft?: boolean;
+  recommended?: boolean;
   createdAt?: string;
   tags?: string[];
   top?: number;
@@ -111,6 +113,12 @@ export interface AdjacentFeed {
 export interface AdjacentFeedResponse {
   previousFeed: AdjacentFeed | null;
   nextFeed: AdjacentFeed | null;
+}
+
+export interface RecommendFeed {
+  id: number;
+  title: string | null;
+  alias?: string | null;
 }
 
 // ============================================================================

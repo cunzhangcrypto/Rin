@@ -15,6 +15,7 @@ import type {
   CreateFeedResponse,
   UpdateFeedRequest,
   AdjacentFeedResponse,
+  RecommendFeed,
   UserProfile,
   UpdateProfileRequest,
   Tag,
@@ -293,6 +294,11 @@ class FeedAPI {
   // GET /api/feed/timeline
   async timeline(): Promise<ApiResponse<TimelineItem[]>> {
     return this.http.get<TimelineItem[]>("/api/feed/timeline");
+  }
+
+  // GET /api/feed/recommend
+  async recommend(): Promise<ApiResponse<RecommendFeed[]>> {
+    return this.http.get<RecommendFeed[]>("/api/feed/recommend");
   }
 
   // GET /api/feed/:id

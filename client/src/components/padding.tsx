@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Padding as RinPadding } from "@rin/ui";
+import { client } from "../app/runtime";
 
 const SOCIAL_LINKS = [
   { platform: 'youtube', url: 'https://youtube.com/@cunzhangcrypto' },
@@ -35,10 +36,12 @@ export function Padding({ children, className, mode = 'both' }: { children?: Rea
 
   useEffect(() => {
     if (mode === 'right') {
-      fetch('https://video.cunzhangai.com/sidebar.json', { cache: 'no-cache' })
-        .then(res => res.json())
-        .then(json => setData(json))
-        .catch(err => console.error("R2 Data Load Failed:", err));
+      // 推荐阅读：随机展示后台标记的文章（服务端按天缓存一批）
+      client.feed.recommend()
+        .then(({ data }) => {
+          if (data && Array.isArray(data)) setData(data);
+        })
+        .catch(err => console.error("Recommend Load Failed:", err));
     }
   }, [mode]);
 
@@ -122,7 +125,7 @@ export function Padding({ children, className, mode = 'both' }: { children?: Rea
   }
 
   if (mode === 'right') {
-    if (!data || !data.latestPosts) return null;
+    if (!data || data.length === 0) return null;
     return (
       <div className="flex flex-col gap-5 w-full text-left">
         <div className="bg-white rounded-[1.8rem] p-6 shadow-sm border border-gray-100">
@@ -131,14 +134,17 @@ export function Padding({ children, className, mode = 'both' }: { children?: Rea
             <h4 className="font-bold text-gray-800 text-[15px]">推荐阅读</h4>
           </div>
           <nav className="flex flex-col">
-            {data.latestPosts.map((post: any, i: number) => (
-              <a key={i} href={post.url} className="py-3 border-b border-gray-50 last:border-0 flex items-start gap-2 group transition-all">
-                <span className="text-gray-300 group-hover:text-[#0f766e] transition-colors mt-0.5">#</span>
-                <span className="text-[14px] font-medium text-gray-600 group-hover:text-[#0f766e] group-hover:translate-x-1 transition-all duration-300 line-clamp-1">
-                  {post.title}
-                </span>
-              </a>
-            ))}
+            {data.map((post: any, i: number) => {
+              const href = post.alias ? `/${post.alias}` : `/feed/${post.id}`;
+              return (
+                <a key={post.id ?? i} href={href} className="py-3 border-b border-gray-50 last:border-0 flex items-start gap-2 group transition-all">
+                  <span className="text-gray-300 group-hover:text-[#0f766e] transition-colors mt-0.5">#</span>
+                  <span className="text-[14px] font-medium text-gray-600 group-hover:text-[#0f766e] group-hover:translate-x-1 transition-all duration-300 line-clamp-1">
+                    {post.title || ""}
+                  </span>
+                </a>
+              );
+            })}
           </nav>
         </div>
       </div>

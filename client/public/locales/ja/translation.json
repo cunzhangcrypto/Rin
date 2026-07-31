@@ -169,6 +169,7 @@
     "title": "目次"
   },
   "listed": "記事にリスト",
+  "recommended": "おすすめに表示",
   "load_more": "もっと読み込む",
   "login": {
     "oauth_only": "続行するにはログインしてください",
