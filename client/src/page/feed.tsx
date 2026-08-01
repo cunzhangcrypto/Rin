@@ -21,6 +21,7 @@ import mermaid from "mermaid";
 import { AdjacentSection } from "../components/adjacent_feed.tsx";
 import { stripImageUrlMetadata } from "../utils/image-upload";
 import { Reward } from "../components/reward";
+import { BACK_TO_LIST_KEY } from "../components/feed_card";
 
 function toAbsoluteUrl(url?: string | null) {
   if (!url) return undefined;
@@ -151,6 +152,7 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
   const { showAlert, AlertUI } = useAlert();
   const { showConfirm, ConfirmUI } = useConfirm();
   const [top, setTop] = useState<number>(0);
+  const [returnUrl, setReturnUrl] = useState("/");
   const config = useContext(ClientConfigContext);
   const counterEnabled = config.getBoolean('counter.enabled');
   const hasAISummary = Boolean(feed?.ai_summary?.trim());
@@ -195,6 +197,10 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
           });
       })
   }
+  useEffect(() => {
+    const saved = sessionStorage.getItem(BACK_TO_LIST_KEY);
+    if (saved) setReturnUrl(saved);
+  }, []);
   useEffect(() => {
     if (ref.current == id) return;
     setFeed(undefined);
@@ -347,7 +353,7 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
             <main className="wauto">
               <div className="m-2 mb-0 flex">
                 <Link
-                  href="/"
+                  href={returnUrl}
                   className="inline-flex items-center justify-center gap-2 rounded-xl border border-black/10 px-4 py-2 text-sm font-medium t-primary transition-colors hover:bg-neutral-50 dark:border-white/10 dark:hover:bg-white/5"
                 >
                   <i className="ri-arrow-left-line" />

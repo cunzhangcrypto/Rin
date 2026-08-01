@@ -9,6 +9,9 @@ import { useImageLoadState } from "../utils/use-image-load-state";
 import { type FeedCardVariant, normalizeFeedCardVariant } from "./feed-card-options";
 import { useSiteConfig } from "../hooks/useSiteConfig";
 
+// 记住来源列表位置（含分页参数），供文章页"返回列表"按钮跳回原分页
+export const BACK_TO_LIST_KEY = "rin:back_to_list_url";
+
 function FeedCardImage({ src, variant }: { src: string; variant: FeedCardVariant }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const { src: cleanSrc, blurhash, width, height } = parseImageUrlMetadata(src);
@@ -145,5 +148,16 @@ export function FeedCard({ id, alias, title, avatar, draft, listed, top, summary
 
     const targetHref = alias ? `/${alias}` : `/feed/${id}`;
 
-    return preview ? body : <Link href={targetHref} target="_blank" className="block w-full">{body}</Link>;
+    return preview ? body : (
+        <Link
+            href={targetHref}
+            target="_blank"
+            className="block w-full"
+            onClick={() => {
+                sessionStorage.setItem(BACK_TO_LIST_KEY, `${window.location.pathname}${window.location.search}`);
+            }}
+        >
+            {body}
+        </Link>
+    );
 }
