@@ -32,4 +32,17 @@ C盘清理软件 - https://pan.quark.cn/s/55baa6b5b607 - 多款C盘清理软件�
 15款必备浏览器插件 - https://pan.quark.cn/s/d79ff33288a7 - 15款实用必备的电脑浏览器插件
 5款视频压缩工具 - https://pan.quark.cn/s/7f362fe0ab80 - 博主自用的多款视频压缩工具
 4款开源的文件传输工具 - https://pan.quark.cn/s/1d38b6de275e - 局域网传输、异地传输，大文件、小文件均可互传
-
+百度网盘不限速工具 - https://pan.quark.cn/s/1913df8db218 - 实测白嫖满速，网盘下载不再被限速卡脖子
+7zip - https://pan.quark.cn/s/3533607809b3 - 开源解压软件，体积小速度快，闲鱼实用工具类爆款
+DirectX修复工具 - https://pan.quark.cn/s/578530a980a8 - 一键修复游戏软件报错，免重装拯救卡顿电脑
+WPS电信定制版 - https://pan.quark.cn/s/af34be8e93f1 - 内置永久激活，所有功能无限制使用
+RustDesk - https://pan.quark.cn/s/ee7a88190265 - 免费远程控制软件，闲鱼销量不错，完全免费使用
+5A景区讲解合集 - https://pan.quark.cn/s/be0087165f8f - 全国318个景区讲解加185个航拍，一次看遍大好河山
+PotPlayer - https://pan.quark.cn/s/06baeff7053a - 全能播放器，功能齐全，闲鱼实用工具
+AI漫剧制作教程 - https://pan.quark.cn/s/e03f0dc4598e - 保姆级教学，一台电脑量产50集漫剧
+C盘清理工具 - https://pan.quark.cn/s/f9d957c4d780 - 小红书爆款虚拟商品，电脑刚需，误删文件也能用
+小红书工作流合集 - https://pan.quark.cn/s/0b3c0fb00d0e - 700条现成工作流，闲鱼1元低价入手
+TV软件全合集 - https://pan.quark.cn/s/b8701366dc4d - 智能电视盒子通用，安装即用无付费
+本地AI配音工具 - https://pan.quark.cn/s/d729166c1a46 - 支持300+AI主播，自媒体配音效率神器
+WPS全家桶 - https://pan.quark.cn/s/de4ad2418962 - 办公三件套永久激活，含AI助手和PDF功能
+多平台一键发布工具 - https://pan.quark.cn/s/a4ac9ed0bfab - 同步视频到10+社交媒体，省时省力
