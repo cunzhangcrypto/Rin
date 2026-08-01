@@ -333,6 +333,12 @@ export function WritingPage({ id }: { id?: number }) {
                 placeholder={t('listed')}
               />
             </FlatMetaRow>
+            <FlatMetaRow className="gap-3 rounded-none border-0 bg-transparent px-0 py-2 sm:rounded-2xl sm:border sm:bg-secondary sm:px-4 sm:py-3 xl:col-span-1">
+              <p className="mr-2 whitespace-nowrap">
+                {t('created_at')}
+              </p>
+              <DateTimeInput value={createdAt} onChange={setCreatedAt} className="w-full max-w-[16rem]" />
+            </FlatMetaRow>
             <FlatMetaRow
               className="cursor-pointer rounded-none border-0 bg-transparent px-0 py-2 sm:rounded-2xl sm:border sm:bg-secondary sm:px-4 sm:py-3"
               onClick={() => setRecommended(!recommended)}
@@ -344,12 +350,6 @@ export function WritingPage({ id }: { id?: number }) {
                 setValue={setRecommended}
                 placeholder={t('recommended')}
               />
-            </FlatMetaRow>
-            <FlatMetaRow className="gap-3 rounded-none border-0 bg-transparent px-0 py-2 sm:rounded-2xl sm:border sm:bg-secondary sm:px-4 sm:py-3 xl:col-span-1">
-              <p className="mr-2 whitespace-nowrap">
-                {t('created_at')}
-              </p>
-              <DateTimeInput value={createdAt} onChange={setCreatedAt} className="w-full max-w-[16rem]" />
             </FlatMetaRow>
           </div>
         </FlatPanel>

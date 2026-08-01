@@ -345,6 +345,15 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
           <>
             <div className="xl:w-64" />
             <main className="wauto">
+              <div className="m-2 mb-0 flex">
+                <Link
+                  href="/"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-black/10 px-4 py-2 text-sm font-medium t-primary transition-colors hover:bg-neutral-50 dark:border-white/10 dark:hover:bg-white/5"
+                >
+                  <i className="ri-arrow-left-line" />
+                  {t('back_to_list')}
+                </Link>
+              </div>
               <article
                 className="rounded-2xl bg-w m-2 px-6 py-4"
                 aria-label={feed.title ?? "Unnamed"}
