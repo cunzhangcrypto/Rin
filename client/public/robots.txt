@@ -1,11 +1,16 @@
 User-agent: *
 Allow: /
 
-Disallow: /admin/
-Disallow: /config/
+# RIN 博客的低价值功能页面
+Disallow: /timeline
+Disallow: /moments
+Disallow: /hashtags
 Disallow: /hashtag/
-Disallow: /feed/
+Disallow: /friends
 
+# 不需要搜索引擎抓取的系统路径
+Disallow: /api/
+Disallow: /admin/
+
+# Sitemap
 Sitemap: https://www.cunzhangblog.com/sitemap.xml
-
-
