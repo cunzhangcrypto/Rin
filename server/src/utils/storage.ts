@@ -144,6 +144,20 @@ export async function headStorageObject(env: Env, storageKey: string): Promise<R
   return response;
 }
 
+export async function deleteStorageObject(env: Env, storageKey: string): Promise<boolean> {
+  if (env.R2_BUCKET) {
+    await env.R2_BUCKET.delete(storageKey);
+    return true;
+  }
+
+  const client = createS3Client(env);
+  const response = await client.fetch(buildS3ObjectUrl(env, storageKey), {
+    method: "DELETE",
+  });
+
+  return response.ok || response.status === 404;
+}
+
 export function getStoragePublicUrl(env: Env, storageKey: string, baseUrl?: string) {
   if (env.S3_ACCESS_HOST) {
     return `${trimTrailingSlash(env.S3_ACCESS_HOST)}/${storageKey}`;

@@ -2,6 +2,7 @@ import { $ } from "bun";
 import { readdir, unlink } from "node:fs/promises";
 import stripIndent from "strip-indent";
 import { fixTopField, getMigrationFileVersion, getMigrationVersion, isInfoExist, updateMigrationVersion } from "../lib/db-migration";
+import { runSeoRender } from "./seo-render";
 const bunExec = process.execPath;
 
 function env(name: string, defaultValue?: string, required = false) {
@@ -319,9 +320,25 @@ export async function runCloudflareDeploy(target: "all" | "server" | "client" = 
   if (target === "server") {
     await $`${bunExec} x wrangler deploy`;
     await syncWorkerSecrets(workerName);
+    await refreshPrerenderSnapshots(finalS3Endpoint, finalS3Bucket, finalS3AccessHost);
     return;
   }
 
   await $`${bunExec} x wrangler deploy`;
   await syncWorkerSecrets(workerName);
+  await refreshPrerenderSnapshots(finalS3Endpoint, finalS3Bucket, finalS3AccessHost);
+}
+
+// 部署成功后用真实浏览器渲染生产站全站，生成完整 HTML 快照存 R2/S3
+async function refreshPrerenderSnapshots(s3Endpoint?: string, s3Bucket?: string, s3AccessHost?: string) {
+  try {
+    process.env.SEO_BASE_URL ||= "https://www.cunzhangblog.com";
+    process.env.S3_ENDPOINT ||= s3Endpoint || "";
+    process.env.S3_BUCKET ||= s3Bucket || "";
+    process.env.S3_ACCESS_HOST ||= s3AccessHost || "";
+    await runSeoRender();
+    console.log("✅ 全站预渲染快照已刷新");
+  } catch (error) {
+    console.warn("⚠️ 全站预渲染快照刷新失败（不影响部署结果）:", error instanceof Error ? error.message : error);
+  }
 }

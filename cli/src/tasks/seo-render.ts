@@ -38,6 +38,17 @@ export async function runSeoRender() {
   const browser = await puppeteer.launch({ args: ["--no-sandbox", "--disable-setuid-sandbox"] });
   const ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36";
 
+  function shouldCrawl(urlString: string): boolean {
+    try {
+      const u = new URL(urlString);
+      if (u.pathname.startsWith("/api/")) return false;
+      if (/\.(xml|json|txt|css|js|png|jpe?g|gif|webp|svg|ico|webmanifest|mp4|zip|pdf)$/i.test(u.pathname)) return false;
+    } catch {
+      return false;
+    }
+    return true;
+  }
+
   async function fetchPage(url: string): Promise<void> {
     const page = await browser.newPage();
     await page.setUserAgent(ua);
@@ -49,7 +60,7 @@ export async function runSeoRender() {
       const links = await page.evaluate(() => Array.from(document.querySelectorAll("a")).map((anchor) => anchor.href));
       for (const link of links.filter((candidate) => candidate.startsWith(baseUrl) || (containsKey && candidate.includes(containsKey)))) {
         const next = link.split("#")[0];
-        if (!fetchedLinks.has(next)) {
+        if (!fetchedLinks.has(next) && shouldCrawl(next)) {
           await fetchPage(next);
         }
       }

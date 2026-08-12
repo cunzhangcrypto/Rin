@@ -1,0 +1,48 @@
+name: SEO Render
+
+on:
+  schedule:
+    # 每 2 天 02:00 UTC = 北京时间 10:00，刷新全站预渲染快照（只重爬，不部署不推送）
+    - cron: '0 2 */2 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  seo-render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: 1.3.6
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Prepare storage env (R2 fallback)
+        run: |
+          if [ -z "$S3_ENDPOINT" ] && [ -n "$R2_BUCKET_NAME" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "S3_ENDPOINT=https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com" >> "$GITHUB_ENV"
+            echo "S3_BUCKET=${R2_BUCKET_NAME}" >> "$GITHUB_ENV"
+            echo "S3_ACCESS_HOST=https://${R2_BUCKET_NAME}.${CLOUDFLARE_ACCOUNT_ID}.r2.dev" >> "$GITHUB_ENV"
+          fi
+        env:
+          S3_ENDPOINT: ${{ vars.S3_ENDPOINT || '' }}
+          R2_BUCKET_NAME: ${{ vars.R2_BUCKET_NAME || '' }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || '' }}
+
+      - name: Run SEO render (refresh prerender snapshots)
+        env:
+          SEO_BASE_URL: https://www.cunzhangblog.com
+          S3_REGION: ${{ vars.S3_REGION || 'auto' }}
+          S3_ENDPOINT: ${{ vars.S3_ENDPOINT || '' }}
+          S3_ACCESS_HOST: ${{ vars.S3_ACCESS_HOST || '' }}
+          S3_BUCKET: ${{ vars.S3_BUCKET || '' }}
+          S3_CACHE_FOLDER: ${{ vars.S3_CACHE_FOLDER || 'cache/' }}
+          S3_FORCE_PATH_STYLE: ${{ vars.S3_FORCE_PATH_STYLE || 'false' }}
+          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID || '' }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY || '' }}
+        run: bun scripts/seo-render.ts

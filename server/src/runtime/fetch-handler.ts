@@ -2,6 +2,8 @@ import { and, desc, eq, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { getApp } from "./app-instance";
 import { escapeHtml, markdownToHtml } from "../utils/markdown-html";
+import { buildSnapshotKey } from "../utils/prerender-snapshot";
+import { getStorageObject } from "../utils/storage";
 
 const ROOT_FEED_PATTERN = /^\/(rss\.xml|atom\.xml|rss\.json|feed\.json|feed\.xml|sitemap-posts\.json)$/;
 const APP_PUBLIC_ROUTE_PATTERN = /^\/(favicon)(?:\/|$)/;
@@ -138,6 +140,18 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
   if (SKIP_SEO_ROUTES.has(pathname)) {
     return serveSpaEntry(request, env);
   }
+
+  // 优先返回预渲染快照（seo-render 生成的完整渲染 HTML，与浏览器结果一致）；
+  // 未命中则回落实时直出
+  try {
+    if (env.R2_BUCKET || env.S3_ENDPOINT) {
+      const snapshotKey = buildSnapshotKey(env, url);
+      const snapshot = await getStorageObject(env, snapshotKey);
+      if (snapshot) {
+        return snapshot;
+      }
+    }
+  } catch {}
 
   const indexResponse = await serveSpaEntry(request, env);
   if (!indexResponse) {
