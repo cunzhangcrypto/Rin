@@ -336,6 +336,8 @@ async function refreshPrerenderSnapshots(s3Endpoint?: string, s3Bucket?: string,
     process.env.S3_ENDPOINT ||= s3Endpoint || "";
     process.env.S3_BUCKET ||= s3Bucket || "";
     process.env.S3_ACCESS_HOST ||= s3AccessHost || "";
+    // bun install 默认阻止 postinstall，puppeteer 的 Chrome 不会自动下载，这里显式安装（已装则秒过）
+    await $`cd cli && ${bunExec} x puppeteer browsers install chrome`.quiet().nothrow();
     await runSeoRender();
     console.log("✅ 全站预渲染快照已刷新");
   } catch (error) {

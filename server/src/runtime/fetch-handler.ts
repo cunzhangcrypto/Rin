@@ -184,7 +184,9 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
         alias: f.alias,
         summary: f.summary && f.summary.length > 0 ? f.summary : (f.content || "").slice(0, 100),
       })));
-    } catch {}
+    } catch (error) {
+      console.error("[prerender-home]", error);
+    }
   } else if (pathname === "/geo") {
     // 预渲染 GEO 栏目：GEO 文章列表（标题+摘要+链接）
     try {
@@ -199,7 +201,9 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
         alias: f.alias,
         summary: f.summary && f.summary.length > 0 ? f.summary : (f.content || "").slice(0, 100),
       })));
-    } catch {}
+    } catch (error) {
+      console.error("[prerender-geo]", error);
+    }
   }
 
   if (alias) {
@@ -255,10 +259,14 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
         if (feed.content) {
           try {
             bodyHtml = `<article class="prerender-article">${await markdownToHtml(feed.content)}</article>`;
-          } catch {}
+          } catch (error) {
+            console.error("[prerender-article]", error);
+          }
         }
       }
-    } catch {}
+    } catch (error) {
+      console.error("[prerender-alias]", error);
+    }
   }
 
   const modifiedHtml = injectMeta(html, title, description, structuredData);

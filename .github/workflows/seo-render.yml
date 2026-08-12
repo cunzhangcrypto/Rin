@@ -22,6 +22,9 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Install puppeteer Chrome
+        run: cd cli && bunx puppeteer browsers install chrome
+
       - name: Prepare storage env (R2 fallback)
         run: |
           if [ -z "$S3_ENDPOINT" ] && [ -n "$R2_BUCKET_NAME" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ]; then
