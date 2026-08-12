@@ -1,37 +1,67 @@
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import path from "node:path";
+import { unlink } from "node:fs/promises";
 import puppeteer from "puppeteer";
+import { $ } from "bun";
 
 export async function runSeoRender() {
   const env = process.env;
   const baseUrl = env.SEO_BASE_URL || "";
   const containsKey = env.SEO_CONTAINS_KEY || "";
+  const folder = env.S3_CACHE_FOLDER || "cache/";
+
+  // S3 模式：S3 兼容凭证齐全
   const region = env.S3_REGION;
   const endpoint = env.S3_ENDPOINT;
   const accessKeyId = env.S3_ACCESS_KEY_ID;
   const secretAccessKey = env.S3_SECRET_ACCESS_KEY;
-  const accessHost = env.S3_ACCESS_HOST || endpoint;
   const bucket = env.S3_BUCKET;
-  const folder = env.S3_CACHE_FOLDER || "cache/";
-  const forcePathStyle = env.S3_FORCE_PATH_STYLE === "true";
+  const accessHost = env.S3_ACCESS_HOST || endpoint;
 
-  if (!baseUrl || !region || !endpoint || !accessKeyId || !secretAccessKey || !bucket) {
-    throw new Error("SEO render env is incomplete");
+  // R2 模式：复用 Cloudflare API Token，经 wrangler r2 object put 上传（无需 S3 兼容凭证）
+  const r2BucketName = env.R2_BUCKET_NAME || "";
+  const cloudflareToken = env.CLOUDFLARE_API_TOKEN || "";
+  const accountId = env.CLOUDFLARE_ACCOUNT_ID || "";
+  const useR2Mode = Boolean(r2BucketName && cloudflareToken && accountId) && !accessKeyId;
+  const useS3Mode = Boolean(region && endpoint && accessKeyId && secretAccessKey && bucket);
+
+  if (!baseUrl) {
+    throw new Error("SEO render env is incomplete: SEO_BASE_URL is required");
+  }
+  if (!useS3Mode && !useR2Mode) {
+    throw new Error(
+      "SEO render env is incomplete: configure S3_* credentials or R2_BUCKET_NAME + CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID",
+    );
   }
 
-  const s3 = new S3Client({
-    region,
-    endpoint,
-    forcePathStyle,
-    credentials: { accessKeyId, secretAccessKey },
-  });
+  let s3: S3Client | null = null;
+  if (useS3Mode) {
+    s3 = new S3Client({
+      region: region!,
+      endpoint: endpoint!,
+      forcePathStyle: env.S3_FORCE_PATH_STYLE === "true",
+      credentials: { accessKeyId: accessKeyId!, secretAccessKey: secretAccessKey! },
+    });
+  }
 
   async function saveFile(filename: string, data: string) {
     const url = new URL(filename);
     let fileName = path.join(folder, url.pathname + url.search.replace("?", "&"));
     if (fileName.endsWith("/")) fileName += "index.html";
-    await s3.send(new PutObjectCommand({ Bucket: bucket, Key: fileName, Body: data, ContentType: "text/html" }));
-    console.info(`Saved ${accessHost}/${fileName}.`);
+
+    if (useR2Mode) {
+      const tmpFile = `.seo-render-tmp-${Date.now()}.html`;
+      await Bun.write(tmpFile, data);
+      try {
+        await $`${process.execPath} x wrangler r2 object put ${r2BucketName}/${fileName} --file=${tmpFile} --content-type=text/html`.quiet();
+      } finally {
+        await unlink(tmpFile).catch(() => {});
+      }
+      console.info(`Saved R2:${fileName}.`);
+    } else {
+      await s3!.send(new PutObjectCommand({ Bucket: bucket, Key: fileName, Body: data, ContentType: "text/html" }));
+      console.info(`Saved ${accessHost}/${fileName}.`);
+    }
   }
 
   const fetchedLinks = new Set<string>();
@@ -52,20 +82,26 @@ export async function runSeoRender() {
   async function fetchPage(url: string): Promise<void> {
     const page = await browser.newPage();
     await page.setUserAgent(ua);
-    const response = await page.goto(url, { waitUntil: "networkidle2" });
-    if (!response) return;
-    if (response.ok() && response.headers()["content-type"]?.includes("text/html")) {
-      await saveFile(url, await page.content());
-      fetchedLinks.add(url);
-      const links = await page.evaluate(() => Array.from(document.querySelectorAll("a")).map((anchor) => anchor.href));
-      for (const link of links.filter((candidate) => candidate.startsWith(baseUrl) || (containsKey && candidate.includes(containsKey)))) {
-        const next = link.split("#")[0];
-        if (!fetchedLinks.has(next) && shouldCrawl(next)) {
-          await fetchPage(next);
+    try {
+      const response = await page.goto(url, { waitUntil: "networkidle2", timeout: 60000 });
+      if (!response) return;
+      if (response.ok() && response.headers()["content-type"]?.includes("text/html")) {
+        await saveFile(url, await page.content());
+        fetchedLinks.add(url);
+        const links = await page.evaluate(() => Array.from(document.querySelectorAll("a")).map((anchor) => anchor.href));
+        for (const link of links.filter((candidate) => candidate.startsWith(baseUrl) || (containsKey && candidate.includes(containsKey)))) {
+          const next = link.split("#")[0];
+          if (!fetchedLinks.has(next) && shouldCrawl(next)) {
+            await fetchPage(next);
+          }
         }
       }
+    } catch (error) {
+      // 单页失败不中断整站爬取
+      console.warn(`Skip ${url}:`, error instanceof Error ? error.message : error);
+    } finally {
+      await page.close();
     }
-    await page.close();
   }
 
   await fetchPage(baseUrl);

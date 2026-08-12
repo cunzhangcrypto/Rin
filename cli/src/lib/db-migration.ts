@@ -51,12 +51,8 @@ async function runWranglerQuiet(args: string[]) {
 }
 
 export async function fixTopField(type: "local" | "remote", db: string, infoExists: boolean) {
-  if (infoExists) {
-    console.log("New database, skip top field check");
-    return;
-  }
-
-  console.log("Legacy database, check top field");
+  // 始终检查 feeds.top 列是否存在（历史库可能从未添加），不存在则幂等补充
+  console.log("Check top field");
   const result = await runWranglerJson([
     "d1",
     "execute",
