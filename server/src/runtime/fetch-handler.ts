@@ -1,6 +1,7 @@
-import { eq, and, or } from "drizzle-orm";
+import { and, desc, eq, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { getApp } from "./app-instance";
+import { escapeHtml, markdownToHtml } from "../utils/markdown-html";
 
 const ROOT_FEED_PATTERN = /^\/(rss\.xml|atom\.xml|rss\.json|feed\.json|feed\.xml|sitemap-posts\.json)$/;
 const APP_PUBLIC_ROUTE_PATTERN = /^\/(favicon)(?:\/|$)/;
@@ -83,6 +84,25 @@ function injectMeta(html: string, title: string, description: string, structured
   return result;
 }
 
+// 预渲染：把文章列表渲染为静态 HTML 卡片（标题+摘要+链接），注入 SPA 壳供 AI 抓取器读取
+function renderFeedCards(
+  items: { id: number; title: string; summary: string; alias: string | null }[],
+): string {
+  const cards = items.map((item) => {
+    const href = item.alias ? `/${item.alias}` : `/feed/${item.id}`;
+    return `<article class="prerender-card"><h2><a href="${escapeHtml(href)}">${escapeHtml(item.title || "")}</a></h2><p>${escapeHtml(item.summary || "")}</p></article>`;
+  });
+  return `<div class="prerender-list">${cards.join("")}</div>`;
+}
+
+// 预渲染：把渲染好的正文/列表 HTML 注入 <div id="root">，React 挂载时会自动替换
+function injectBody(html: string, bodyHtml: string): string {
+  if (!bodyHtml) {
+    return html;
+  }
+  return html.replace('<div id="root"></div>', `<div id="root">${bodyHtml}</div>`);
+}
+
 // 旧版 /feed/:id 链接：若文章有别名，301 重定向到根路径别名，保证全站统一用别名 URL
 async function tryRedirectLegacyFeedPath(request: Request, env: Env): Promise<Response | null> {
   const url = new URL(request.url);
@@ -133,6 +153,40 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
   let title = `${siteName} | AI工具、技术实操、网络媒体运营 - 探索技术出海与变现`;
   let description = "面向中文互联网用户，分享AI工具、技术实操与变现方法的技术博客";
   let structuredData: string | undefined;
+  let bodyHtml = "";
+
+  // 预渲染首页：前 10 条已发布文章卡片（标题+摘要+链接）
+  if (pathname === "/") {
+    try {
+      const list = await db.query.feeds.findMany({
+        where: and(eq(schema.feeds.draft, 0), eq(schema.feeds.listed, 1)),
+        columns: { id: true, title: true, summary: true, alias: true, content: true },
+        orderBy: [desc(schema.feeds.top), desc(schema.feeds.createdAt), desc(schema.feeds.updatedAt)],
+        limit: 10,
+      });
+      bodyHtml = renderFeedCards(list.map((f: any) => ({
+        id: f.id,
+        title: f.title,
+        alias: f.alias,
+        summary: f.summary && f.summary.length > 0 ? f.summary : (f.content || "").slice(0, 100),
+      })));
+    } catch {}
+  } else if (pathname === "/geo") {
+    // 预渲染 GEO 栏目：GEO 文章列表（标题+摘要+链接）
+    try {
+      const list = await db.query.feeds.findMany({
+        where: and(eq(schema.feeds.draft, 0), eq(schema.feeds.ai_visible, 1)),
+        columns: { id: true, title: true, summary: true, alias: true, content: true },
+        orderBy: [desc(schema.feeds.createdAt), desc(schema.feeds.updatedAt)],
+      });
+      bodyHtml = renderFeedCards(list.map((f: any) => ({
+        id: f.id,
+        title: f.title,
+        alias: f.alias,
+        summary: f.summary && f.summary.length > 0 ? f.summary : (f.content || "").slice(0, 100),
+      })));
+    } catch {}
+  }
 
   if (alias) {
     try {
@@ -182,12 +236,20 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
           wordCount: (feed.content || "").length,
           keywords: tags,
         });
+
+        // 预渲染文章正文（markdown → HTML）
+        if (feed.content) {
+          try {
+            bodyHtml = `<article class="prerender-article">${await markdownToHtml(feed.content)}</article>`;
+          } catch {}
+        }
       }
     } catch {}
   }
 
   const modifiedHtml = injectMeta(html, title, description, structuredData);
-  return new Response(modifiedHtml, {
+  const finalHtml = injectBody(modifiedHtml, bodyHtml);
+  return new Response(finalHtml, {
     status: indexResponse.status,
     statusText: indexResponse.statusText,
     headers: indexResponse.headers,

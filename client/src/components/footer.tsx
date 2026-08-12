@@ -91,7 +91,7 @@ function Footer() {
             </Helmet>
             <div className="flex flex-col mb-8 space-y-2 justify-center items-center t-primary ani-show">
                 <div ref={footerHtmlRef} />
-                <p className='text-sm text-neutral-500 font-normal link-line'>
+                <p className='text-sm text-neutral-500 font-normal link-line text-center'>
                     <span className="block text-xs text-neutral-400">
                         {t('site_definition_full')}
                     </span>
