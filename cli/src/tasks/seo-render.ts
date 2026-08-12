@@ -64,6 +64,9 @@ export async function runSeoRender() {
     }
   }
 
+  // 与 robots.txt Disallow 一致：非关键页不做预渲染快照（仅爬首页、文章页、列表分页、/geo、工具页、/about 等关键路由）
+  const EXCLUDED_PATHS = ["/timeline", "/moments", "/hashtags", "/hashtag/", "/friends"];
+
   const fetchedLinks = new Set<string>();
   const browser = await puppeteer.launch({ args: ["--no-sandbox", "--disable-setuid-sandbox"] });
   const ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36";
@@ -73,13 +76,18 @@ export async function runSeoRender() {
       const u = new URL(urlString);
       if (u.pathname.startsWith("/api/")) return false;
       if (/\.(xml|json|txt|css|js|png|jpe?g|gif|webp|svg|ico|webmanifest|mp4|zip|pdf)$/i.test(u.pathname)) return false;
+      if (EXCLUDED_PATHS.some((prefix) => u.pathname.startsWith(prefix))) return false;
     } catch {
       return false;
     }
     return true;
   }
 
-  async function fetchPage(url: string): Promise<void> {
+  // 广度优先队列 + 并发 worker，替代原深度优先串行爬取
+  const queue: string[] = [baseUrl];
+  const concurrency = Number(process.env.SEO_CONCURRENCY || "4");
+
+  async function crawl(url: string): Promise<void> {
     const page = await browser.newPage();
     await page.setUserAgent(ua);
     try {
@@ -87,12 +95,12 @@ export async function runSeoRender() {
       if (!response) return;
       if (response.ok() && response.headers()["content-type"]?.includes("text/html")) {
         await saveFile(url, await page.content());
-        fetchedLinks.add(url);
         const links = await page.evaluate(() => Array.from(document.querySelectorAll("a")).map((anchor) => anchor.href));
         for (const link of links.filter((candidate) => candidate.startsWith(baseUrl) || (containsKey && candidate.includes(containsKey)))) {
           const next = link.split("#")[0];
           if (!fetchedLinks.has(next) && shouldCrawl(next)) {
-            await fetchPage(next);
+            fetchedLinks.add(next);
+            queue.push(next);
           }
         }
       }
@@ -104,6 +112,15 @@ export async function runSeoRender() {
     }
   }
 
-  await fetchPage(baseUrl);
+  async function worker() {
+    while (queue.length > 0) {
+      const url = queue.shift()!;
+      if (fetchedLinks.has(url)) continue;
+      fetchedLinks.add(url);
+      await crawl(url);
+    }
+  }
+
+  await Promise.all(Array.from({ length: concurrency }, () => worker()));
   await browser.close();
 }
