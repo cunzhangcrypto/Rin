@@ -170,6 +170,14 @@
   },
   "listed": "列出在文章中",
   "recommended": "展示在推荐阅读",
+  "site_definition": "面向中文互联网用户，分享AI工具、技术实操与变现方法的技术博客",
+  "site_definition_full": "Web3村长是一个面向中文互联网用户，分享AI工具、技术实操与变现方法的技术博客。",
+  "ai_visible": "GEO 文章（不进首页，仅 AI 收录）",
+  "geo": {
+    "title": "品牌档案",
+    "description": "面向中文互联网用户，分享AI工具、技术实操与变现方法的技术博客。这里是 Web3村长 的品牌信息与专题内容归档。",
+    "empty": "暂无内容"
+  },
   "back_to_list": "返回列表",
   "load_more": "加载更多",
   "login": {

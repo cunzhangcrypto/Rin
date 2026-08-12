@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import type { AppContext } from "../core/hono-types";
 import { profileAsync } from "../core/server-timing";
@@ -64,7 +64,7 @@ export function RSSService(): Hono {
 
         const [posts, countResult] = await Promise.all([
             db.query.feeds.findMany({
-                where: and(eq(feeds.draft, 0), eq(feeds.listed, 1)),
+                where: and(eq(feeds.draft, 0), or(eq(feeds.listed, 1), eq(feeds.ai_visible, 1))),
                 orderBy: [desc(feeds.createdAt), desc(feeds.updatedAt)],
                 limit: perPage,
                 offset: offset,
@@ -77,7 +77,7 @@ export function RSSService(): Hono {
                     updatedAt: true,
                 },
             }),
-            db.select({ count: sql<number>`count(*)` }).from(feeds).where(and(eq(feeds.draft, 0), eq(feeds.listed, 1))).execute(),
+            db.select({ count: sql<number>`count(*)` }).from(feeds).where(and(eq(feeds.draft, 0), or(eq(feeds.listed, 1), eq(feeds.ai_visible, 1)))).execute(),
         ]);
 
         const total = Number(countResult[0]?.count || 0);

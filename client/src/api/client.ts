@@ -16,6 +16,7 @@ import type {
   UpdateFeedRequest,
   AdjacentFeedResponse,
   RecommendFeed,
+  GeoFeed,
   UserProfile,
   UpdateProfileRequest,
   Tag,
@@ -299,6 +300,11 @@ class FeedAPI {
   // GET /api/feed/recommend
   async recommend(): Promise<ApiResponse<RecommendFeed[]>> {
     return this.http.get<RecommendFeed[]>("/api/feed/recommend");
+  }
+
+  // GET /api/feed/geo
+  async geo(): Promise<ApiResponse<GeoFeed[]>> {
+    return this.http.get<GeoFeed[]>("/api/feed/geo");
   }
 
   // GET /api/feed/:id

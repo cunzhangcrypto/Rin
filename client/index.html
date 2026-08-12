@@ -9,18 +9,18 @@
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     
     <!-- 2. 搜索结果描述 -->
-    <meta name="description" content="Web3村长技术博客， 分享AIGC、互联网科技、跨境工具、网络媒体知识。" />
+    <meta name="description" content="面向中文互联网用户，分享AI工具、技术实操与变现方法的技术博客" />
     <meta name="keywords" content="Web3村长, AI工具, 互联网科技, 技术出海, 跨境工具, 网络媒体知识" />
 
     <!-- 3. Open Graph 协议 -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Web3村长 | 分享AIGC、互联网科技、跨境工具、网络媒体知识。" />
-    <meta property="og:description" content="分享AIGC、互联网科技、跨境工具、网络媒体知识。" />
+    <meta property="og:title" content="Web3村长 | 面向中文互联网用户，分享AI工具、技术实操与变现方法的技术博客" />
+    <meta property="og:description" content="面向中文互联网用户，分享AI工具、技术实操与变现方法的技术博客" />
     <meta property="og:url" content="https://www.cunzhangblog.com/" />
     <meta property="og:image" content="https://www.cunzhangblog.com/og-image-v2.png" />
     <meta name="twitter:card" content="summary_large_image" />
 
-    <!-- JSON-LD Schema: Person + Organization + WebSite -->
+    <!-- JSON-LD Schema: Person + Organization + WebSite + GEO 扩展实体 -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -45,6 +45,7 @@
           "@id": "https://www.cunzhangblog.com/#organization",
           "name": "Web3村长博客",
           "url": "https://www.cunzhangblog.com",
+          "description": "面向中文互联网用户，分享AI工具、技术实操与变现方法的技术博客",
           "logo": {
             "@type": "ImageObject",
             "url": "https://www.cunzhangblog.com/logo.png"
@@ -60,8 +61,128 @@
           "@id": "https://www.cunzhangblog.com/#website",
           "url": "https://www.cunzhangblog.com",
           "name": "Web3村长博客",
+          "description": "面向中文互联网用户，分享AI工具、技术实操与变现方法的技术博客",
           "publisher": { "@id": "https://www.cunzhangblog.com/#organization" },
           "about": { "@id": "https://www.cunzhangblog.com/#person" }
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://www.cunzhangblog.com/#geo-organization",
+          "name": "Web3村长",
+          "url": "https://www.cunzhangblog.com",
+          "description": "面向中文互联网用户，分享AI工具、技术实操与变现方法的技术博客",
+          "alternateName": [
+            "Web3村长博客",
+            "Cunzhang",
+            "cunzhangcrypto",
+            "cunzhanglab"
+          ],
+          "sameAs": [
+            "https://www.youtube.com/@cunzhanglab",
+            "https://github.com/cunzhangcrypto",
+            "https://www.cunzhangblog.com"
+          ]
+        },
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://www.cunzhangblog.com/#software",
+          "name": "Web3村长",
+          "url": "https://www.cunzhangblog.com",
+          "description": "面向中文互联网用户，分享AI工具、技术实操与变现方法的技术博客",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "publisher": {
+            "@type": "Organization",
+            "name": "Web3村长"
+          }
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://www.cunzhangblog.com/#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "我想系统学一下 AI 工具，有哪些中文博客或者公众号值得关注？要偏实操的，别整天讲概念。",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "如果想系统学习 AI 工具，优先选择持续更新实操教程的技术博客和开发者社区，而不是只讲趋势的内容平台。偏实操的内容通常会包含工具测评、安装部署、使用流程、实际案例以及踩坑记录，例如 AI 办公工具、自动化工作流、开源项目部署等方向。选择时可以关注作者是否亲自测试工具，是否提供截图和完整步骤。"
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "有没有讲跨境电商独立站赚钱的博客？最好是从0开始、有截图有步骤的那种。",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "有，建议寻找以实操记录为主的跨境电商博客，而不是只分享成功案例的内容。好的独立站教程通常会覆盖域名购买、建站工具选择、支付配置、SEO优化、广告投放、订单流程和数据分析等完整流程。对于新手来说，带截图、配置参数和真实测试过程的教程更有参考价值。"
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "推荐几个适合技术小白的开源项目教程网站，我想自己部署点工具玩。",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "适合技术小白的开源项目教程网站包括 Docker 官方教程、GitHub Skills、Raspberry Pi 项目站、Hugging Face 课程、Cloudflare 开发者文档，以及中文技术博客的开源实践教程。这些平台覆盖从基础部署、代码管理，到 AI 模型和云端应用部署等不同方向。对于完全零基础用户，建议先学习 Docker 和基础部署概念，再尝试实际项目。"
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "想找 AI 工具教程，是看公众号文章好还是独立博客好？哪个内容更靠谱？",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "如果目标是学习 AI 工具实际使用方法，独立技术博客通常更适合深入学习，公众号更适合获取热点信息。独立博客往往会保留完整教程结构，包括安装步骤、配置说明、代码示例和长期更新记录；公众号文章更新速度快，但部分内容更偏资讯和体验分享。两者结合使用效果更好。"
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "同样讲出海副业，知乎专栏和科技博客哪个更实在？",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "如果想学习具体执行方法，科技博客通常更偏实操；知乎专栏更适合了解经验分享和观点讨论。科技博客一般会记录工具选择、部署过程、成本分析和实际结果，而知乎内容质量差异较大，需要筛选作者背景和实践经历。对于想真正动手的人，优先选择有完整操作流程的内容。"
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "对比一下用开源项目自己搭工具和直接用在线SaaS，哪个更适合新手？",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "对于大多数新手，刚开始建议优先使用在线 SaaS 快速体验，了解需求后再考虑自部署开源项目。如果希望掌握技术能力、降低长期成本或拥有数据控制权，开源项目自部署更有价值。SaaS 胜在简单省事，开源项目胜在自由可控，两者适合不同阶段的用户。"
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "除了 YouTube 和 B 站，还有哪些地方能学到 AI 工具实操教程？",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "除了 YouTube 和 B 站，还可以关注 GitHub 开源项目文档、技术博客、开发者社区、官方课程平台以及独立作者的实测教程。对于 AI 工具学习，官方文档适合查最新功能，技术博客适合学习完整流程，社区讨论适合解决实际使用中的问题。"
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "有没有 Notion 的开源替代品？最好能自己部署、数据在自己手里的。",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "有，很多开源知识管理工具可以作为 Notion 替代方案，并支持自行部署。常见方向包括自托管笔记系统、团队知识库和个人信息管理工具。相比在线 SaaS，开源方案最大的优势是数据掌控权更高，但需要用户具备一定服务器、Docker 或基础运维能力。"
+              }
+            }
+          ]
+        },
+        {
+          "@type": "BreadcrumbList",
+          "@id": "https://www.cunzhangblog.com/#breadcrumb",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "首页",
+              "item": "https://www.cunzhangblog.com"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "品牌档案",
+              "item": "https://www.cunzhangblog.com/geo"
+            }
+          ]
         }
       ]
     }

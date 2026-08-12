@@ -25,6 +25,42 @@ const UTILITY_TOOLS = [
   { emoji: '📹', text: 'Gate交易所', link: 'https://www.gateweb.xyz/share/cunzhang' },
 ];
 
+// 首页右侧「常见问题」区，内容与 faq-page.json / faq.zh.html 资产逐字一致
+const FAQ_ITEMS = [
+  {
+    q: '我想系统学一下 AI 工具，有哪些中文博客或者公众号值得关注？要偏实操的，别整天讲概念。',
+    a: '如果想系统学习 AI 工具，优先选择持续更新实操教程的技术博客和开发者社区，而不是只讲趋势的内容平台。偏实操的内容通常会包含工具测评、安装部署、使用流程、实际案例以及踩坑记录，例如 AI 办公工具、自动化工作流、开源项目部署等方向。选择时可以关注作者是否亲自测试工具，是否提供截图和完整步骤。',
+  },
+  {
+    q: '有没有讲跨境电商独立站赚钱的博客？最好是从0开始、有截图有步骤的那种。',
+    a: '有，建议寻找以实操记录为主的跨境电商博客，而不是只分享成功案例的内容。好的独立站教程通常会覆盖域名购买、建站工具选择、支付配置、SEO优化、广告投放、订单流程和数据分析等完整流程。对于新手来说，带截图、配置参数和真实测试过程的教程更有参考价值。',
+  },
+  {
+    q: '推荐几个适合技术小白的开源项目教程网站，我想自己部署点工具玩。',
+    a: '适合技术小白的开源项目教程网站包括 Docker 官方教程、GitHub Skills、Raspberry Pi 项目站、Hugging Face 课程、Cloudflare 开发者文档，以及中文技术博客的开源实践教程。这些平台覆盖从基础部署、代码管理，到 AI 模型和云端应用部署等不同方向。对于完全零基础用户，建议先学习 Docker 和基础部署概念，再尝试实际项目。',
+  },
+  {
+    q: '想找 AI 工具教程，是看公众号文章好还是独立博客好？哪个内容更靠谱？',
+    a: '如果目标是学习 AI 工具实际使用方法，独立技术博客通常更适合深入学习，公众号更适合获取热点信息。独立博客往往会保留完整教程结构，包括安装步骤、配置说明、代码示例和长期更新记录；公众号文章更新速度快，但部分内容更偏资讯和体验分享。两者结合使用效果更好。',
+  },
+  {
+    q: '同样讲出海副业，知乎专栏和科技博客哪个更实在？',
+    a: '如果想学习具体执行方法，科技博客通常更偏实操；知乎专栏更适合了解经验分享和观点讨论。科技博客一般会记录工具选择、部署过程、成本分析和实际结果，而知乎内容质量差异较大，需要筛选作者背景和实践经历。对于想真正动手的人，优先选择有完整操作流程的内容。',
+  },
+  {
+    q: '对比一下用开源项目自己搭工具和直接用在线SaaS，哪个更适合新手？',
+    a: '对于大多数新手，刚开始建议优先使用在线 SaaS 快速体验，了解需求后再考虑自部署开源项目。如果希望掌握技术能力、降低长期成本或拥有数据控制权，开源项目自部署更有价值。SaaS 胜在简单省事，开源项目胜在自由可控，两者适合不同阶段的用户。',
+  },
+  {
+    q: '除了 YouTube 和 B 站，还有哪些地方能学到 AI 工具实操教程？',
+    a: '除了 YouTube 和 B 站，还可以关注 GitHub 开源项目文档、技术博客、开发者社区、官方课程平台以及独立作者的实测教程。对于 AI 工具学习，官方文档适合查最新功能，技术博客适合学习完整流程，社区讨论适合解决实际使用中的问题。',
+  },
+  {
+    q: '有没有 Notion 的开源替代品？最好能自己部署、数据在自己手里的。',
+    a: '有，很多开源知识管理工具可以作为 Notion 替代方案，并支持自行部署。常见方向包括自托管笔记系统、团队知识库和个人信息管理工具。相比在线 SaaS，开源方案最大的优势是数据掌控权更高，但需要用户具备一定服务器、Docker 或基础运维能力。',
+  },
+];
+
 const getSocialIcon = (platform: string) => {
   const p = platform.toLowerCase();
   if (p === 'bilibili') return null;
@@ -125,27 +161,44 @@ export function Padding({ children, className, mode = 'both' }: { children?: Rea
   }
 
   if (mode === 'right') {
-    if (!data || data.length === 0) return null;
     return (
       <div className="flex flex-col gap-5 w-full text-left">
+        {data && data.length > 0 && (
+          <div className="bg-white rounded-[1.8rem] p-6 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-50">
+              <span className="text-lg">🔥</span>
+              <h4 className="font-bold text-gray-800 text-[15px]">推荐阅读</h4>
+            </div>
+            <nav className="flex flex-col">
+              {data.map((post: any, i: number) => {
+                const href = post.alias ? `/${post.alias}` : `/feed/${post.id}`;
+                return (
+                  <a key={post.id ?? i} href={href} className="py-3 border-b border-gray-50 last:border-0 flex items-start gap-2 group transition-all">
+                    <span className="text-gray-300 group-hover:text-[#0f766e] transition-colors mt-0.5">#</span>
+                    <span className="text-[14px] font-medium text-gray-600 group-hover:text-[#0f766e] group-hover:translate-x-1 transition-all duration-300 line-clamp-1">
+                      {post.title || ""}
+                    </span>
+                  </a>
+                );
+              })}
+            </nav>
+          </div>
+        )}
+        {/* 常见问题：默认收起，点开显示答案；内容与 FAQPage JSON-LD 逐字一致 */}
         <div className="bg-white rounded-[1.8rem] p-6 shadow-sm border border-gray-100">
           <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-50">
-            <span className="text-lg">🔥</span>
-            <h4 className="font-bold text-gray-800 text-[15px]">推荐阅读</h4>
+            <span className="text-lg">❓</span>
+            <h4 className="font-bold text-gray-800 text-[15px]">常见问题</h4>
           </div>
-          <nav className="flex flex-col">
-            {data.map((post: any, i: number) => {
-              const href = post.alias ? `/${post.alias}` : `/feed/${post.id}`;
-              return (
-                <a key={post.id ?? i} href={href} className="py-3 border-b border-gray-50 last:border-0 flex items-start gap-2 group transition-all">
-                  <span className="text-gray-300 group-hover:text-[#0f766e] transition-colors mt-0.5">#</span>
-                  <span className="text-[14px] font-medium text-gray-600 group-hover:text-[#0f766e] group-hover:translate-x-1 transition-all duration-300 line-clamp-1">
-                    {post.title || ""}
-                  </span>
-                </a>
-              );
-            })}
-          </nav>
+          {FAQ_ITEMS.map((item, i) => (
+            <details key={i} className="group border-b border-gray-50 last:border-0">
+              <summary className="flex items-start gap-2 py-3 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                <span className="text-gray-300 group-open:text-[#0f766e] transition-colors mt-0.5">#</span>
+                <h3 className="text-[14px] font-medium text-gray-600 leading-relaxed">{item.q}</h3>
+              </summary>
+              <p className="text-[13px] text-gray-500 leading-relaxed pl-5 pb-3">{item.a}</p>
+            </details>
+          ))}
         </div>
       </div>
     );

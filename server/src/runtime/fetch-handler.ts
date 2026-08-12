@@ -131,13 +131,13 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
   const siteName = "Web3村长";
 
   let title = `${siteName} | AI工具、技术实操、网络媒体运营 - 探索技术出海与变现`;
-  let description = "Web3村长技术博客，专注分享AI工具实操、互联网白嫖玩法、区块链技术、自媒体运营及SEO优化经验，带你探索技术出海与变现的无限可能。";
+  let description = "面向中文互联网用户，分享AI工具、技术实操与变现方法的技术博客";
   let structuredData: string | undefined;
 
   if (alias) {
     try {
       const feed = await db.query.feeds.findFirst({
-        where: and(eq(schema.feeds.alias, alias), eq(schema.feeds.draft, 0), eq(schema.feeds.listed, 1)),
+        where: and(eq(schema.feeds.alias, alias), eq(schema.feeds.draft, 0), or(eq(schema.feeds.listed, 1), eq(schema.feeds.ai_visible, 1))),
         columns: { id: true, title: true, content: true, summary: true, createdAt: true, updatedAt: true },
         with: {
           user: { columns: { username: true } },

@@ -40,6 +40,7 @@ export interface Feed {
   pv: number;
   uv: number;
   top?: number;
+  ai_visible?: boolean;
 }
 
 export interface FeedListResponse {
@@ -83,6 +84,7 @@ export interface CreateFeedRequest {
   draft: boolean;
   listed: boolean;
   recommended?: boolean;
+  ai_visible?: boolean;
   createdAt?: string;
   tags: string[];
 }
@@ -95,6 +97,7 @@ export interface UpdateFeedRequest {
   listed: boolean;
   draft?: boolean;
   recommended?: boolean;
+  ai_visible?: boolean;
   createdAt?: string;
   tags?: string[];
   top?: number;
@@ -119,6 +122,16 @@ export interface RecommendFeed {
   id: number;
   title: string | null;
   alias?: string | null;
+}
+
+// GEO 归档页文章条目（不进首页，仅供 AI 抓取入口）
+export interface GeoFeed {
+  id: number;
+  title: string | null;
+  summary: string;
+  alias?: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // ============================================================================

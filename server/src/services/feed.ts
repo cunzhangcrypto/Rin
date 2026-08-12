@@ -127,6 +127,19 @@ export function FeedService(): Hono<{
         return c.json(data);
     });
 
+    // GET /feed/geo - GEO 文章归档列表（不进首页，仅供 AI 抓取入口）
+    app.get('/geo', async (c) => {
+        const db = c.get('db');
+
+        const data = await profileAsync(c, 'feed_geo_db', () => db.query.feeds.findMany({
+            where: and(eq(feeds.draft, 0), eq(feeds.ai_visible, 1)),
+            columns: { id: true, title: true, summary: true, alias: true, createdAt: true, updatedAt: true },
+            orderBy: [desc(feeds.createdAt), desc(feeds.updatedAt)],
+        }));
+
+        return c.json(data);
+    });
+
     // GET /feed/timeline
     app.get('/timeline', async (c) => {
         const db = c.get('db');
@@ -166,7 +179,7 @@ export function FeedService(): Hono<{
         const admin = c.get('admin');
         const uid = c.get('uid');
         const body = await profileAsync(c, 'feed_create_parse', () => c.req.json());
-        const { title, alias, listed, content, summary, draft, tags, recommended, createdAt } = body;
+        const { title, alias, listed, content, summary, draft, tags, recommended, ai_visible, createdAt } = body;
 
         if (!admin) {
             return c.text('Permission denied', 403);
@@ -219,6 +232,7 @@ export function FeedService(): Hono<{
             listed: listed ? 1 : 0,
             draft: draft ? 1 : 0,
             recommended: recommended ? 1 : 0,
+            ai_visible: ai_visible ? 1 : 0,
             createdAt: date,
             updatedAt: date
         }).returning({ insertedId: feeds.id }));
@@ -430,7 +444,7 @@ export function FeedService(): Hono<{
         const uid = c.get('uid');
         const id = c.req.param('id');
         const body = await profileAsync(c, 'feed_update_parse', () => c.req.json());
-        const { title, listed, content, summary, alias, draft, top, tags, recommended, createdAt } = body;
+        const { title, listed, content, summary, alias, draft, top, tags, recommended, ai_visible, createdAt } = body;
 
         const id_num = parseInt(id);
         const feed = await profileAsync(c, 'feed_update_lookup', () => db.query.feeds.findFirst({ where: eq(feeds.id, id_num) }));
@@ -474,6 +488,7 @@ export function FeedService(): Hono<{
             listed: listed ? 1 : 0,
             draft: draft === undefined ? undefined : draft ? 1 : 0,
             recommended: recommended === undefined ? undefined : recommended ? 1 : 0,
+            ai_visible: ai_visible === undefined ? undefined : ai_visible ? 1 : 0,
             createdAt: createdAt ? new Date(createdAt) : undefined,
             updatedAt: updateTime
         }).where(eq(feeds.id, id_num)));

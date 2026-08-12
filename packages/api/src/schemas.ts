@@ -19,6 +19,7 @@ export const feedCreateSchema = t.Object({
   draft: t.Boolean(),
   listed: t.Boolean(),
   recommended: t.Boolean({ optional: true }),
+  ai_visible: t.Boolean({ optional: true }),
   createdAt: t.Date({ optional: true }),
   tags: t.Array(t.String()),
 });
@@ -31,6 +32,7 @@ export const feedUpdateSchema = t.Object({
   listed: t.Boolean(),
   draft: t.Boolean({ optional: true }),
   recommended: t.Boolean({ optional: true }),
+  ai_visible: t.Boolean({ optional: true }),
   createdAt: t.Date({ optional: true }),
   tags: t.Array(t.String(), { optional: true }),
   top: t.Numeric({ optional: true }),

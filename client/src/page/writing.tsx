@@ -20,6 +20,7 @@ async function publish({
   alias,
   listed,
   recommended,
+  aiVisible,
   content,
   summary,
   tags,
@@ -35,6 +36,7 @@ async function publish({
   tags: string[];
   draft: boolean;
   recommended?: boolean;
+  aiVisible?: boolean;
   alias?: string;
   createdAt?: Date;
   onCompleted?: () => void;
@@ -51,6 +53,7 @@ async function publish({
       listed,
       draft,
       recommended,
+      ai_visible: aiVisible,
       createdAt: createdAt?.toISOString(),
     }
   );
@@ -78,6 +81,7 @@ async function update({
   listed,
   draft,
   recommended,
+  aiVisible,
   createdAt,
   onCompleted,
   showAlert
@@ -91,6 +95,7 @@ async function update({
   tags?: string[];
   draft?: boolean;
   recommended?: boolean;
+  aiVisible?: boolean;
   createdAt?: Date;
   onCompleted?: () => void;
   showAlert: ShowAlertType;
@@ -107,6 +112,7 @@ async function update({
       listed,
       draft,
       recommended,
+      ai_visible: aiVisible,
       createdAt: createdAt?.toISOString(),
     }
   );
@@ -136,6 +142,7 @@ export function WritingPage({ id }: { id?: number }) {
   const [draft, setDraft] = useState(false);
   const [listed, setListed] = useState(true);
   const [recommended, setRecommended] = useState(false);
+  const [aiVisible, setAiVisible] = useState(false);
   const [content, setContent] = cache.useCache("content", "");
   const [createdAt, setCreatedAt] = useState<Date | undefined>(new Date());
   const [publishing, setPublishing] = useState(false)
@@ -159,6 +166,7 @@ export function WritingPage({ id }: { id?: number }) {
         draft,
         listed,
         recommended,
+        aiVisible,
         createdAt,
         onCompleted: () => {
           setPublishing(false)
@@ -184,6 +192,7 @@ export function WritingPage({ id }: { id?: number }) {
         alias,
         listed,
         recommended,
+        aiVisible,
         createdAt,
         onCompleted: () => {
           setPublishing(false)
@@ -208,6 +217,7 @@ export function WritingPage({ id }: { id?: number }) {
             setListed((data as any).listed === 1);
             setDraft((data as any).draft === 1);
             setRecommended((data as any).recommended === 1);
+            setAiVisible((data as any).ai_visible === 1);
             setCreatedAt(new Date(data.createdAt));
           }
         });
@@ -349,6 +359,26 @@ export function WritingPage({ id }: { id?: number }) {
                 value={recommended}
                 setValue={setRecommended}
                 placeholder={t('recommended')}
+              />
+            </FlatMetaRow>
+            <FlatMetaRow
+              className="cursor-pointer rounded-none border-0 bg-transparent px-0 py-2 sm:rounded-2xl sm:border sm:bg-secondary sm:px-4 sm:py-3"
+              onClick={() => {
+                const next = !aiVisible;
+                setAiVisible(next);
+                if (next) setListed(false);
+              }}
+            >
+              <p>{t('ai_visible')}</p>
+              <Checkbox
+                id="ai_visible"
+                value={aiVisible}
+                setValue={(value: boolean | ((prev: boolean) => boolean)) => {
+                  const next = typeof value === "function" ? value(aiVisible) : value;
+                  setAiVisible(next);
+                  if (next) setListed(false);
+                }}
+                placeholder={t('ai_visible')}
               />
             </FlatMetaRow>
           </div>

@@ -487,7 +487,7 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
                     <div className="flex-1 min-w-0">
                       <p className="text-base font-bold t-primary">Web3村长</p>
                       <p className="text-sm t-secondary mt-1 leading-relaxed">
-                        中文互联网技术内容创作者，专注分享 AI工具、开源项目、互联网效率工具和数字生产力。
+                        {t('site_definition_full')}
                       </p>
                     </div>
                   </div>

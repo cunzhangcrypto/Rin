@@ -170,6 +170,14 @@
   },
   "listed": "Listed in articles",
   "recommended": "Show in Recommended Reading",
+  "site_definition": "A tech blog sharing AI tools, hands-on tutorials and monetization methods for Chinese internet users.",
+  "site_definition_full": "Web3村长 (Cunzhang) is a tech blog that shares AI tools, hands-on tutorials and monetization methods for Chinese internet users.",
+  "ai_visible": "GEO article (not on homepage, AI-indexed only)",
+  "geo": {
+    "title": "Brand Profile",
+    "description": "A tech blog sharing AI tools, hands-on tutorials and monetization methods for Chinese internet users. This is the Web3村长 brand profile and topic archive.",
+    "empty": "No content yet"
+  },
   "back_to_list": "Back to List",
   "load_more": "Load More",
   "login": {

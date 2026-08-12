@@ -1,6 +1,6 @@
 import { useContext, useEffect, useRef, useState } from 'react';
 import Popup from 'reactjs-popup';
-import { useLocation } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { ClientConfigContext } from '../state/config';
 import { Helmet } from "react-helmet";
 import { siteName } from '../utils/constants';
@@ -92,6 +92,9 @@ function Footer() {
             <div className="flex flex-col mb-8 space-y-2 justify-center items-center t-primary ani-show">
                 <div ref={footerHtmlRef} />
                 <p className='text-sm text-neutral-500 font-normal link-line'>
+                    <span className="block text-xs text-neutral-400">
+                        {t('site_definition_full')}
+                    </span>
                     <span onDoubleClick={() => {
                         if(doubleClickTimes >= 2){ // actually need 3 times doubleClick
                             setDoubleClickTimes(0)
@@ -103,6 +106,10 @@ function Footer() {
                         }
                     }}>
                         © {new Date().getFullYear()} Web3村长 <a className='hover:underline' href="https://cunzhangai.com/" target="_blank" rel="noopener">AI工具箱</a>
+                        <Spliter />
+                        <Link className='hover:underline' href="/geo">
+                            {t('geo.title')}
+                        </Link>
                     </span>
                     {config.getBoolean('rss') && <>
                         <Spliter />

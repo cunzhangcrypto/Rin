@@ -32,6 +32,7 @@ const jsonLd = {
             "@id": "https://www.cunzhangblog.com/#organization",
             "name": "Web3村长博客",
             "url": "https://www.cunzhangblog.com",
+            "description": "面向中文互联网用户，分享AI工具、技术实操与变现方法的技术博客",
             "logo": {
                 "@type": "ImageObject",
                 "url": "https://www.cunzhangblog.com/logo.png"
@@ -47,6 +48,7 @@ const jsonLd = {
             "@id": "https://www.cunzhangblog.com/#website",
             "url": "https://www.cunzhangblog.com",
             "name": "Web3村长博客",
+            "description": "面向中文互联网用户，分享AI工具、技术实操与变现方法的技术博客",
             "publisher": { "@id": "https://www.cunzhangblog.com/#organization" },
             "about": { "@id": "https://www.cunzhangblog.com/#person" }
         }

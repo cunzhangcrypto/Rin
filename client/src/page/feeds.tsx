@@ -81,6 +81,11 @@ export function FeedsPage() {
                         <p>
                             {listState === 'draft' ? t('draft_bin') : listState === 'normal' ? t('article.title') : t('unlisted')}
                         </p>
+                        {listState === 'normal' && (
+                            <p className="text-sm mt-4 text-neutral-500 font-normal">
+                                {t('site_definition')}
+                            </p>
+                        )}
                         <div className="flex flex-row justify-between">
                             <p className="text-sm mt-4 text-neutral-500 font-normal">
                                 {t('article.total$count', { count: feeds[listState]?.size })}
