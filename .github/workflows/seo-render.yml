@@ -1,9 +1,7 @@
 name: SEO Render
 
 on:
-  schedule:
-    # 每 2 天 02:00 UTC = 北京时间 10:00，刷新全站预渲染快照（只重爬，不部署不推送）
-    - cron: '0 2 */2 * *'
+  # 手动触发：发文/更新文章后手动跑一次刷新全站预渲染快照（只重爬，不部署不推送）
   workflow_dispatch:
 
 permissions:
