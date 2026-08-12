@@ -105,6 +105,13 @@ function injectBody(html: string, bodyHtml: string): string {
   return html.replace('<div id="root"></div>', `<div id="root">${bodyHtml}</div>`);
 }
 
+// 预渲染静态 footer：注入到 #root 供 AI 抓取读取（与浏览器渲染的 Footer 内容一致，React 挂载时会被替换）
+const STATIC_FOOTER_HTML = `
+<footer class="prerender-footer" style="text-align:center;padding:24px 16px;color:#666;font-size:14px;line-height:1.8">
+  <p>Web3村长是一个面向中文互联网用户，分享AI工具、技术实操与变现方法的技术博客</p>
+  <p>© 2026 Web3村长 <a href="https://cunzhangai.com/" style="color:#4f46e5">AI工具箱</a> | <a href="/geo" style="color:#4f46e5">品牌档案</a> | <a href="/rss.xml" style="color:#4f46e5">RSS</a></p>
+</footer>`;
+
 // 旧版 /feed/:id 链接：若文章有别名，301 重定向到根路径别名，保证全站统一用别名 URL
 async function tryRedirectLegacyFeedPath(request: Request, env: Env): Promise<Response | null> {
   const url = new URL(request.url);
@@ -270,7 +277,7 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
   }
 
   const modifiedHtml = injectMeta(html, title, description, structuredData);
-  const finalHtml = injectBody(modifiedHtml, bodyHtml);
+  const finalHtml = injectBody(modifiedHtml, bodyHtml + STATIC_FOOTER_HTML);
   return new Response(finalHtml, {
     status: indexResponse.status,
     statusText: indexResponse.statusText,
