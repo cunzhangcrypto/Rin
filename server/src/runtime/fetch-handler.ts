@@ -9,6 +9,34 @@ const ROOT_FEED_PATTERN = /^\/(rss\.xml|atom\.xml|rss\.json|feed\.json|feed\.xml
 const APP_PUBLIC_ROUTE_PATTERN = /^\/(favicon)(?:\/|$)/;
 const LEGACY_FEED_PATH_PATTERN = /^\/feed\/[^/]+$/;
 
+// 美观的 404 页面（自包含 HTML，无需前端 JS）
+const NOT_FOUND_HTML = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>404 - 页面不存在 | Web3村长</title>
+<meta name="robots" content="noindex" />
+<style>
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:#fafafa;color:#333;display:flex;align-items:center;justify-content:center;min-height:100vh}
+  .box{text-align:center;padding:40px 24px}
+  .code{font-size:96px;font-weight:800;color:#4f46e5;line-height:1;margin-bottom:16px}
+  h1{font-size:22px;margin:0 0 12px}
+  p{color:#888;font-size:15px;margin:0 0 32px}
+  a.btn{display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:12px 32px;border-radius:8px;font-size:15px}
+  a.btn:hover{background:#4338ca}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="code">404</div>
+  <h1>页面不存在或已删除</h1>
+  <p>你访问的页面可能已被移动或删除，去首页看看吧</p>
+  <a class="btn" href="/">返回首页</a>
+</div>
+</body>
+</html>`;
+
 const SKIP_SEO_ROUTES = new Set(["/login", "/callback", "/profile", "/user/github"]);
 
 // 已知的 SPA 前端路由：这些页面真实存在（由前端渲染），未命中文章时返回 200 而非 404
@@ -197,6 +225,16 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
   const url = new URL(request.url);
   const pathname = url.pathname;
 
+  // 首页参数变体归一化：/?type=normal&page=1 等 301 到 /，/?page=N（N>1）归一为 /?page=N（剥离 type 等其他参数）
+  if (pathname === "/" && (url.searchParams.has("page") || url.searchParams.has("type"))) {
+    const pageNum = parseInt(url.searchParams.get("page") || "", 10);
+    const target =
+      url.searchParams.has("page") && Number.isFinite(pageNum) && pageNum > 1 ? `/?page=${pageNum}` : "/";
+    if (`${url.pathname}${url.search}` !== target) {
+      return Response.redirect(`${url.origin}${target}`, 301);
+    }
+  }
+
   if (SKIP_SEO_ROUTES.has(pathname)) {
     return serveSpaEntry(request, env);
   }
@@ -339,7 +377,10 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
 
     // 文章不存在且非已知 SPA 路由 → 真 404（消除软 404，便于搜索引擎清理失效索引）
     if (!feedFound && !isKnownSpaRoute(pathname)) {
-      return new Response("Not Found", { status: 404 });
+      return new Response(NOT_FOUND_HTML, {
+        status: 404,
+        headers: { "content-type": "text/html; charset=utf-8" },
+      });
     }
   }
 
