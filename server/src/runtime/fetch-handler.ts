@@ -100,6 +100,24 @@ function injectMeta(html: string, title: string, description: string, structured
   return result;
 }
 
+// 注入 <link rel="canonical">，消除「重复网页」问题：告诉搜索引擎当前页面的规范 URL
+function injectCanonical(html: string, canonicalUrl: string): string {
+  const withoutExisting = html.replace(/<link[^>]*rel=["']canonical["'][^>]*\/?>/i, "");
+  return withoutExisting.replace("</head>", `<link rel="canonical" href="${escapeHtml(canonicalUrl)}" />\n</head>`);
+}
+
+// 计算页面的规范 URL：首页归一化（page<=1 或无 page → /，page>1 → /?page=N），其余页面保留 pathname 去参数
+function buildCanonicalUrl(origin: string, pathname: string, url: URL): string {
+  if (pathname === "/") {
+    const pageNum = parseInt(url.searchParams.get("page") || "", 10);
+    if (Number.isFinite(pageNum) && pageNum > 1) {
+      return `${origin}/?page=${pageNum}`;
+    }
+    return `${origin}/`;
+  }
+  return `${origin}${pathname}`;
+}
+
 // 预渲染：把文章列表渲染为静态 HTML 卡片（标题+摘要+链接），注入 SPA 壳供 AI 抓取器读取
 function renderFeedCards(
   items: { id: number; title: string; summary: string; alias: string | null }[],
@@ -164,12 +182,18 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
 
   // 优先返回预渲染快照（seo-render 生成的完整渲染 HTML，与浏览器结果一致）；
   // 未命中则回落实时直出
+  const canonicalUrl = buildCanonicalUrl(url.origin, pathname, url);
   try {
     if (env.R2_BUCKET || env.S3_ENDPOINT) {
       const snapshotKey = buildSnapshotKey(env, url);
       const snapshot = await getStorageObject(env, snapshotKey);
       if (snapshot) {
-        return snapshot;
+        // 快照也注入 canonical，保证规范 URL 一致
+        const snapshotHtml = await snapshot.text();
+        return new Response(injectCanonical(snapshotHtml, canonicalUrl), {
+          status: 200,
+          headers: { "content-type": "text/html; charset=utf-8" },
+        });
       }
     }
   } catch {}
@@ -300,7 +324,7 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
 
   const modifiedHtml = injectMeta(html, title, description, structuredData);
   const finalHtml = injectBody(modifiedHtml, bodyHtml + STATIC_FOOTER_HTML);
-  return new Response(finalHtml, {
+  return new Response(injectCanonical(finalHtml, canonicalUrl), {
     status: indexResponse.status,
     statusText: indexResponse.statusText,
     headers: indexResponse.headers,
