@@ -118,6 +118,27 @@ function buildCanonicalUrl(origin: string, pathname: string, url: URL): string {
   return `${origin}${pathname}`;
 }
 
+// 低价值动态页：内容由前端 JS 渲染，服务端返回的是相同空壳，禁止索引避免 Google 判为重复网页
+function shouldNoindex(pathname: string): boolean {
+  return (
+    pathname.startsWith("/hashtag/") ||
+    pathname.startsWith("/search/") ||
+    pathname === "/hashtags" ||
+    pathname === "/timeline" ||
+    pathname === "/moments" ||
+    pathname === "/friends" ||
+    pathname.startsWith("/admin/")
+  );
+}
+
+function injectRobots(html: string, noindex: boolean): string {
+  if (!noindex) {
+    return html;
+  }
+  const withoutExisting = html.replace(/<meta[^>]*name=["']robots["'][^>]*\/?>/i, "");
+  return withoutExisting.replace("</head>", `<meta name="robots" content="noindex,follow" />\n</head>`);
+}
+
 // 预渲染：把文章列表渲染为静态 HTML 卡片（标题+摘要+链接），注入 SPA 壳供 AI 抓取器读取
 function renderFeedCards(
   items: { id: number; title: string; summary: string; alias: string | null }[],
@@ -188,9 +209,9 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
       const snapshotKey = buildSnapshotKey(env, url);
       const snapshot = await getStorageObject(env, snapshotKey);
       if (snapshot) {
-        // 快照也注入 canonical，保证规范 URL 一致
+        // 快照也注入 canonical / noindex，保证规范 URL 与索引策略一致
         const snapshotHtml = await snapshot.text();
-        return new Response(injectCanonical(snapshotHtml, canonicalUrl), {
+        return new Response(injectRobots(injectCanonical(snapshotHtml, canonicalUrl), shouldNoindex(pathname)), {
           status: 200,
           headers: { "content-type": "text/html; charset=utf-8" },
         });
@@ -324,7 +345,7 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
 
   const modifiedHtml = injectMeta(html, title, description, structuredData);
   const finalHtml = injectBody(modifiedHtml, bodyHtml + STATIC_FOOTER_HTML);
-  return new Response(injectCanonical(finalHtml, canonicalUrl), {
+  return new Response(injectRobots(injectCanonical(finalHtml, canonicalUrl), shouldNoindex(pathname)), {
     status: indexResponse.status,
     statusText: indexResponse.statusText,
     headers: indexResponse.headers,
