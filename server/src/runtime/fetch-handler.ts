@@ -11,6 +11,20 @@ const LEGACY_FEED_PATH_PATTERN = /^\/feed\/[^/]+$/;
 
 const SKIP_SEO_ROUTES = new Set(["/login", "/callback", "/profile", "/user/github"]);
 
+// 已知的 SPA 前端路由：这些页面真实存在（由前端渲染），未命中文章时返回 200 而非 404
+function isKnownSpaRoute(pathname: string): boolean {
+  return (
+    pathname === "/timeline" ||
+    pathname === "/moments" ||
+    pathname === "/friends" ||
+    pathname === "/hashtags" ||
+    pathname === "/geo" ||
+    pathname.startsWith("/hashtag/") ||
+    pathname.startsWith("/search/") ||
+    pathname.startsWith("/admin/")
+  );
+}
+
 function isApiRequest(pathname: string) {
   return pathname.startsWith("/api/");
 }
@@ -214,6 +228,7 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
   }
 
   if (alias) {
+    let feedFound = false;
     try {
       const feed = await db.query.feeds.findFirst({
         where: and(eq(schema.feeds.alias, alias), eq(schema.feeds.draft, 0), or(eq(schema.feeds.listed, 1), eq(schema.feeds.ai_visible, 1))),
@@ -225,6 +240,7 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
       });
 
       if (feed) {
+        feedFound = true;
         const feedTitle = feed.title || "未命名";
         const rawDesc = feed.summary || (feed.content ? feed.content.substring(0, 200) : "");
         title = `${feedTitle} - ${siteName}`;
@@ -273,6 +289,12 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
       }
     } catch (error) {
       console.error("[prerender-alias]", error);
+      feedFound = true; // 查询异常时保守返回 200，避免正常页面误判 404
+    }
+
+    // 文章不存在且非已知 SPA 路由 → 真 404（消除软 404，便于搜索引擎清理失效索引）
+    if (!feedFound && !isKnownSpaRoute(pathname)) {
+      return new Response("Not Found", { status: 404 });
     }
   }
 
