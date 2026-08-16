@@ -302,6 +302,11 @@ class FeedAPI {
     return this.http.get<RecommendFeed[]>("/api/feed/recommend");
   }
 
+  // POST /api/feed/recommend/order - 批量保存推荐阅读排序（ids 顺序即展示顺序）
+  async saveRecommendOrder(ids: number[]): Promise<ApiResponse<void>> {
+    return this.http.post<void>("/api/feed/recommend/order", { ids });
+  }
+
   // GET /api/feed/geo
   async geo(): Promise<ApiResponse<GeoFeed[]>> {
     return this.http.get<GeoFeed[]>("/api/feed/geo");

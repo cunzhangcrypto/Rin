@@ -22,6 +22,7 @@
     "remove": "Remove",
     "save_order": "Save Order",
     "saved": "Saved",
+    "save_failed": "Save failed: {{error}}",
     "move_up": "Move up",
     "move_down": "Move down"
   },

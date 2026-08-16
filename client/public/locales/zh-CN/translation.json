@@ -22,6 +22,7 @@
     "remove": "关闭",
     "save_order": "保存顺序",
     "saved": "已保存",
+    "save_failed": "保存失败：{{error}}",
     "move_up": "上移",
     "move_down": "下移"
   },

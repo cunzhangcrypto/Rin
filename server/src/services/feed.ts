@@ -165,7 +165,7 @@ export function FeedService(): Hono<{
     });
 
     // GET /feed/recommend - 推荐阅读：最多 10 条
-    // 手动排序过（recommend_order > 0）时按顺序返回；未手动排序时随机取 10 条
+    // 手动排序过（recommend_order > 0）的优先按顺序返回，不足 10 条时用未排序的推荐随机补齐
     // 按「北京时区日期」缓存 24 小时，一天内固定一批，第二天自动换新
     app.get('/recommend', async (c) => {
         const db = c.get('db');
@@ -180,22 +180,63 @@ export function FeedService(): Hono<{
                 orderBy: [asc(feeds.recommendOrder), desc(feeds.createdAt)],
                 limit: 10,
             });
-            if (ordered.length > 0) {
+            if (ordered.length >= 10) {
                 return ordered;
             }
-            // 未手动排序：随机取 10 条（原行为）
-            return db.query.feeds.findMany({
-                where: and(eq(feeds.draft, 0), eq(feeds.listed, 1), eq(feeds.recommended, 1)),
-                columns: { id: true, title: true, alias: true },
-                orderBy: sql`RANDOM()`,
-                limit: 10,
-            });
+            // 已排序的不足 10 条时，用未手动排序的推荐随机补齐，避免部分排序后其它推荐消失
+            const rest = ordered.length > 0
+                ? await db.query.feeds.findMany({
+                    where: and(eq(feeds.draft, 0), eq(feeds.listed, 1), eq(feeds.recommended, 1), eq(feeds.recommendOrder, 0)),
+                    columns: { id: true, title: true, alias: true },
+                    orderBy: sql`RANDOM()`,
+                    limit: 10 - ordered.length,
+                })
+                : await db.query.feeds.findMany({
+                    where: and(eq(feeds.draft, 0), eq(feeds.listed, 1), eq(feeds.recommended, 1)),
+                    columns: { id: true, title: true, alias: true },
+                    orderBy: sql`RANDOM()`,
+                    limit: 10,
+                });
+            return [...ordered, ...rest];
         }));
 
         return c.json(data);
     });
 
-    // POST /feed - Create feed
+    // POST /feed/recommend/order - 批量保存推荐阅读排序
+    // 一次请求原子完成，避免逐条更新中途失败导致只保存了一部分
+    app.post('/recommend/order', async (c) => {
+        const db = c.get('db');
+        const cache = c.get('cache');
+        const env = c.get('env');
+        const admin = c.get('admin');
+        if (!admin) {
+            return c.text('Permission denied', 403);
+        }
+        const body = await profileAsync(c, 'feed_recommend_order_parse', () => c.req.json());
+        const ids = body?.ids;
+        if (!Array.isArray(ids) || ids.length === 0 || ids.length > 100) {
+            return c.text('Bad request', 400);
+        }
+        const idNums = ids.map((v: any) => parseInt(v, 10));
+        if (idNums.some((n: any) => !Number.isFinite(n))) {
+            return c.text('Bad request', 400);
+        }
+        const now = new Date();
+        await profileAsync(c, 'feed_recommend_order_db', () => db.batch(
+            idNums.map((id: number, i: number) =>
+                db.update(feeds).set({
+                    listed: 1,
+                    recommended: 1,
+                    recommendOrder: i + 1,
+                    updatedAt: now,
+                }).where(eq(feeds.id, id)),
+            ) as [any, ...any[]],
+        ));
+        await profileAsync(c, 'feed_recommend_order_cache_invalidate', () => clearFeedCache(cache, 0, null, null));
+        await profileAsync(c, 'feed_recommend_order_prerender_invalidate', () => clearPrerender(env, ["/", "/geo"]));
+        return c.text('Updated');
+    });
     app.post('/', async (c) => {
         const db = c.get('db');
         const cache = c.get('cache');

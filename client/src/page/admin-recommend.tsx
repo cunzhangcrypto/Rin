@@ -55,6 +55,8 @@ export function AdminRecommendPage() {
       }
       setItems((prev) => prev.filter((x) => x.id !== id));
       showAlert(t("recommend.saved"));
+    } catch (err) {
+      showAlert(t("recommend.save_failed", { error: String(err) }));
     } finally {
       setSaving(false);
     }
@@ -63,18 +65,15 @@ export function AdminRecommendPage() {
   const save = async () => {
     setSaving(true);
     try {
-      for (let i = 0; i < items.length; i++) {
-        const { error } = await client.feed.update(items[i].id, {
-          listed: true,
-          recommended: true,
-          recommend_order: i + 1,
-        });
-        if (error) {
-          showAlert(error.value);
-          return;
-        }
+      // 一次请求原子保存全部顺序，避免逐条更新中途失败只保存了一部分
+      const { error } = await client.feed.saveRecommendOrder(items.map((x) => x.id));
+      if (error) {
+        showAlert(error.value);
+        return;
       }
       showAlert(t("recommend.saved"));
+    } catch (err) {
+      showAlert(t("recommend.save_failed", { error: String(err) }));
     } finally {
       setSaving(false);
     }

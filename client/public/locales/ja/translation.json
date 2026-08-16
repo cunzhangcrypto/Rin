@@ -22,6 +22,7 @@
     "remove": "非表示",
     "save_order": "順序を保存",
     "saved": "保存しました",
+    "save_failed": "保存に失敗しました：{{error}}",
     "move_up": "上へ",
     "move_down": "下へ"
   },
