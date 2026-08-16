@@ -10,6 +10,7 @@ import { getHeaderLayoutDefinition } from "../components/site-header/layout-regi
 import { Tips, TipsPage } from "../components/tips";
 import useTableOfContents from "../hooks/useTableOfContents";
 import { useSiteConfig } from "../hooks/useSiteConfig";
+import { AdminRecommendPage } from "../page/admin-recommend";
 import { CallbackPage } from "../page/callback";
 import { CompatTasksPage } from "../page/compat-tasks";
 import { ErrorPage } from "../page/error";
@@ -83,6 +84,10 @@ export function AppRoutes() {
 
       <AdminRoute path="/admin/compat-tasks" requirePermission title={t("compat_tasks.title")} description={t("admin.compat_tasks_description")}>
         <CompatTasksPage />
+      </AdminRoute>
+
+      <AdminRoute path="/admin/recommend" requirePermission title={t("recommend.manage")} description={t("admin.recommend_description")}>
+        <AdminRecommendPage />
       </AdminRoute>
 
       <AdminRoute path="/admin/writing" requirePermission title={t("writing")} description={t("admin.writing_description")}>

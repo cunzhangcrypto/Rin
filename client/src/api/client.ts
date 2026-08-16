@@ -282,7 +282,7 @@ class FeedAPI {
   constructor(private http: HttpClient) {}
 
   // GET /api/feed
-  async list(params?: { page?: number; limit?: number; type?: 'draft' | 'unlisted' | 'normal' }): Promise<ApiResponse<FeedListResponse>> {
+  async list(params?: { page?: number; limit?: number; type?: 'draft' | 'unlisted' | 'normal' | 'recommend' }): Promise<ApiResponse<FeedListResponse>> {
     const searchParams = new URLSearchParams();
     if (params?.page) searchParams.set("page", params.page.toString());
     if (params?.limit) searchParams.set("limit", params.limit.toString());

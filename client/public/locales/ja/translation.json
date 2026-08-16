@@ -12,7 +12,18 @@
     "queue_status_description": "AI 要約キューの進行状況、最近のタスク結果、失敗内容を確認します。",
     "settings_description": "サイトの挙動、連携設定、公開ルールを一か所で管理します。",
     "title": "管理画面",
-    "writing_description": "非公開の管理ワークスペースから記事を作成、編集、公開します。"
+    "writing_description": "非公開の管理ワークスペースから記事を作成、編集、公開します。",
+    "recommend_description": "おすすめ記事を管理：非表示設定と表示順の調整。"
+  },
+  "recommend": {
+    "manage": "おすすめ記事",
+    "tip": "最大 10 件を上記の順序で表示します。非表示の設定と並び替えができます。",
+    "empty": "おすすめ記事はまだありません",
+    "remove": "非表示",
+    "save_order": "順序を保存",
+    "saved": "保存しました",
+    "move_up": "上へ",
+    "move_down": "下へ"
   },
   "compat_tasks": {
     "title": "互換タスク",

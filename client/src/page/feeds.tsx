@@ -98,6 +98,9 @@ export function FeedsPage() {
                                     <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'} className={`text-sm mt-4 text-neutral-500 font-normal ${listState === 'unlisted' ? "text-theme" : ""}`}>
                                         {t('unlisted')}
                                     </Link>
+                                    <Link href="/admin/recommend" className="text-sm mt-4 text-neutral-500 font-normal hover:text-theme">
+                                        {t('recommend.manage')}
+                                    </Link>
                                 </div>
                             }
                         </div>

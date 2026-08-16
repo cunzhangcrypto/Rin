@@ -12,7 +12,18 @@
     "queue_status_description": "查看 AI 摘要佇列進度、最近任務結果與失敗資訊。",
     "settings_description": "在統一的後台空間中管理站點行為、整合配置與發佈規則。",
     "title": "後台管理",
-    "writing_description": "在獨立的管理工作區中編寫、編輯並發佈內容。"
+    "writing_description": "在獨立的管理工作區中編寫、編輯並發佈內容。",
+    "recommend_description": "管理推薦閱讀：關閉不顯示的、調整展示順序。"
+  },
+  "recommend": {
+    "manage": "推薦閱讀",
+    "tip": "最多展示 10 條，依上方順序依序展示；可在此關閉不顯示的、調整順序。",
+    "empty": "暫無推薦文章",
+    "remove": "關閉",
+    "save_order": "儲存順序",
+    "saved": "已儲存",
+    "move_up": "上移",
+    "move_down": "下移"
   },
   "compat_tasks": {
     "title": "相容任務",

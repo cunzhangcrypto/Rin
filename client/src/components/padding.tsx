@@ -126,15 +126,15 @@ export function Padding({ children, className, mode = 'both' }: { children?: Rea
         </div>
 
         {/* 广告栏 */}
-        <a href="https://geonix.com/?partner_link=hr7qyBUuqy" target="_blank" rel="noreferrer"
+        <a href="https://www.junkuatech.com/index.html?code=cunzhang" target="_blank" rel="noreferrer"
            className="block w-full rounded-[1.8rem] overflow-hidden shadow-sm border border-gray-100 bg-white group transition-all">
           <div className="relative overflow-hidden bg-gradient-to-br from-[#0f766e]/10 to-[#134e4a]/10 rounded-b-[1.8rem]">
-            <img src="/geonix.webp" className="w-full h-40 object-cover" alt="Geonix" />
+            <img src="/yunsuan.webp" className="w-full h-40 object-cover" alt="YunSuan" />
           </div>
           <div className="p-3.5 border-t border-gray-50 bg-white">
-            <h4 className="text-gray-800 font-bold text-[15px] truncate mb-1">出海必备 · 静态住宅IP</h4>
+            <h4 className="text-gray-800 font-bold text-[15px] truncate mb-1">欧美电商双ISP</h4>
             <div className="flex items-center justify-between">
-              <span className="text-[#0f766e] text-[12px] font-bold bg-teal-50 px-1.5 py-0.5 rounded-md">全球覆盖 · 不限速</span>
+              <span className="text-[#0f766e] text-[12px] font-bold bg-teal-50 px-1.5 py-0.5 rounded-md">专为TikTok/亚马逊打造</span>
               <span className="text-gray-300 group-hover:text-[#0f766e] transition-colors text-xs">→</span>
             </div>
           </div>
@@ -155,6 +155,21 @@ export function Padding({ children, className, mode = 'both' }: { children?: Rea
             ))}
           </nav>
         </div>
+
+        {/* 广告栏 */}
+        <a href="https://geonix.com/?partner_link=hr7qyBUuqy" target="_blank" rel="noreferrer"
+           className="block w-full rounded-[1.8rem] overflow-hidden shadow-sm border border-gray-100 bg-white group transition-all">
+          <div className="relative overflow-hidden bg-gradient-to-br from-[#0f766e]/10 to-[#134e4a]/10 rounded-b-[1.8rem]">
+            <img src="/geonix.webp" className="w-full h-40 object-cover" alt="Geonix" />
+          </div>
+          <div className="p-3.5 border-t border-gray-50 bg-white">
+            <h4 className="text-gray-800 font-bold text-[15px] truncate mb-1">出海必备 · 静态住宅IP</h4>
+            <div className="flex items-center justify-between">
+              <span className="text-[#0f766e] text-[12px] font-bold bg-teal-50 px-1.5 py-0.5 rounded-md">全球覆盖 · 不限速</span>
+              <span className="text-gray-300 group-hover:text-[#0f766e] transition-colors text-xs">→</span>
+            </div>
+          </div>
+        </a>
 
       </div>
     );

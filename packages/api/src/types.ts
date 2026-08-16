@@ -84,6 +84,7 @@ export interface CreateFeedRequest {
   draft: boolean;
   listed: boolean;
   recommended?: boolean;
+  recommend_order?: number;
   ai_visible?: boolean;
   createdAt?: string;
   tags: string[];
@@ -97,6 +98,7 @@ export interface UpdateFeedRequest {
   listed: boolean;
   draft?: boolean;
   recommended?: boolean;
+  recommend_order?: number;
   ai_visible?: boolean;
   createdAt?: string;
   tags?: string[];

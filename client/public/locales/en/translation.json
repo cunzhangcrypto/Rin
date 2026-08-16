@@ -12,7 +12,18 @@
     "queue_status_description": "Inspect AI summary queue progress, recent task results, and failures.",
     "settings_description": "Manage site behavior, integrations, and publishing rules in one place.",
     "title": "Admin",
-    "writing_description": "Write, edit, and publish content from the private management workspace."
+    "writing_description": "Write, edit, and publish content from the private management workspace.",
+    "recommend_description": "Manage recommended reading: hide posts and adjust their display order."
+  },
+  "recommend": {
+    "manage": "Recommended Reading",
+    "tip": "Up to 10 posts are shown in the order above. You can hide posts and reorder them here.",
+    "empty": "No recommended posts yet",
+    "remove": "Remove",
+    "save_order": "Save Order",
+    "saved": "Saved",
+    "move_up": "Move up",
+    "move_down": "Move down"
   },
   "compat_tasks": {
     "title": "Compatibility Tasks",

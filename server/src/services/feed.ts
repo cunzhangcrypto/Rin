@@ -45,7 +45,9 @@ async function buildFeedListData(
         ? eq(feeds.draft, 1)
         : type === 'unlisted'
             ? and(eq(feeds.draft, 0), eq(feeds.listed, 0))
-            : and(eq(feeds.draft, 0), eq(feeds.listed, 1));
+            : type === 'recommend'
+                ? and(eq(feeds.draft, 0), eq(feeds.recommended, 1))
+                : and(eq(feeds.draft, 0), eq(feeds.listed, 1));
 
     const size = await db.select({ count: count() }).from(feeds).where(where);
 
@@ -65,7 +67,9 @@ async function buildFeedListData(
             },
             user: { columns: { id: true, username: true, avatar: true } }
         },
-        orderBy: [desc(feeds.top), desc(feeds.createdAt), desc(feeds.updatedAt)],
+        orderBy: type === 'recommend'
+            ? [asc(feeds.recommendOrder), desc(feeds.createdAt)]
+            : [desc(feeds.top), desc(feeds.createdAt), desc(feeds.updatedAt)],
         offset: page_num * limit_num,
         limit: limit_num + 1,
     })).map(({ content, hashtags, summary, ...other }: any) => {
@@ -119,7 +123,7 @@ export function FeedService(): Hono<{
         const limit = c.req.query('limit');
         const type = c.req.query('type');
 
-        if ((type === 'draft' || type === 'unlisted') && !admin) {
+        if ((type === 'draft' || type === 'unlisted' || type === 'recommend') && !admin) {
             return c.text('Permission denied', 403);
         }
 
@@ -127,8 +131,8 @@ export function FeedService(): Hono<{
         const limit_num = limit ? parseInt(limit) > 50 ? 50 : parseInt(limit) : 20;
         const cacheKey = `feeds_${type}_${page_num}_${limit_num}`;
 
-        // draft/unlisted 仅管理员可见，不缓存；公开列表走 KV 缓存
-        const data = type === 'draft' || type === 'unlisted'
+        // draft/unlisted/recommend 仅管理员可见，不缓存；公开列表走 KV 缓存
+        const data = type === 'draft' || type === 'unlisted' || type === 'recommend'
             ? await buildFeedListData(db, type, page_num, limit_num, Boolean(admin))
             : await profileAsync(c, 'feed_list_cache_get', () => cache.getOrSet(cacheKey, () => buildFeedListData(db, type, page_num, limit_num, Boolean(admin))));
 
@@ -160,7 +164,8 @@ export function FeedService(): Hono<{
         })));
     });
 
-    // GET /feed/recommend - 推荐阅读：已发布且标记 recommended 的文章，随机取 10 条
+    // GET /feed/recommend - 推荐阅读：最多 10 条
+    // 手动排序过（recommend_order > 0）时按顺序返回；未手动排序时随机取 10 条
     // 按「北京时区日期」缓存 24 小时，一天内固定一批，第二天自动换新
     app.get('/recommend', async (c) => {
         const db = c.get('db');
@@ -168,12 +173,24 @@ export function FeedService(): Hono<{
         const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
         const cacheKey = `recommend_${today}`;
 
-        const data = await profileAsync(c, 'feed_recommend', () => cache.getOrSet(cacheKey, () => db.query.feeds.findMany({
-            where: and(eq(feeds.draft, 0), eq(feeds.listed, 1), eq(feeds.recommended, 1)),
-            columns: { id: true, title: true, alias: true },
-            orderBy: sql`RANDOM()`,
-            limit: 10,
-        })));
+        const data = await profileAsync(c, 'feed_recommend', () => cache.getOrSet(cacheKey, async () => {
+            const ordered = await db.query.feeds.findMany({
+                where: and(eq(feeds.draft, 0), eq(feeds.listed, 1), eq(feeds.recommended, 1), gt(feeds.recommendOrder, 0)),
+                columns: { id: true, title: true, alias: true },
+                orderBy: [asc(feeds.recommendOrder), desc(feeds.createdAt)],
+                limit: 10,
+            });
+            if (ordered.length > 0) {
+                return ordered;
+            }
+            // 未手动排序：随机取 10 条（原行为）
+            return db.query.feeds.findMany({
+                where: and(eq(feeds.draft, 0), eq(feeds.listed, 1), eq(feeds.recommended, 1)),
+                columns: { id: true, title: true, alias: true },
+                orderBy: sql`RANDOM()`,
+                limit: 10,
+            });
+        }));
 
         return c.json(data);
     });
@@ -454,7 +471,7 @@ export function FeedService(): Hono<{
         const uid = c.get('uid');
         const id = c.req.param('id');
         const body = await profileAsync(c, 'feed_update_parse', () => c.req.json());
-        const { title, listed, content, summary, alias, draft, top, tags, recommended, ai_visible, createdAt } = body;
+        const { title, listed, content, summary, alias, draft, top, tags, recommended, recommend_order, ai_visible, createdAt } = body;
 
         const id_num = parseInt(id);
         const feed = await profileAsync(c, 'feed_update_lookup', () => db.query.feeds.findFirst({ where: eq(feeds.id, id_num) }));
@@ -498,6 +515,7 @@ export function FeedService(): Hono<{
             listed: listed ? 1 : 0,
             draft: draft === undefined ? undefined : draft ? 1 : 0,
             recommended: recommended === undefined ? undefined : recommended ? 1 : 0,
+            recommendOrder: recommend_order === undefined ? undefined : Math.max(0, Math.floor(recommend_order)),
             ai_visible: ai_visible === undefined ? undefined : ai_visible ? 1 : 0,
             createdAt: createdAt ? new Date(createdAt) : undefined,
             updatedAt: updateTime
