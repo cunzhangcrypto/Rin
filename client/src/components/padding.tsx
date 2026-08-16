@@ -126,7 +126,7 @@ export function Padding({ children, className, mode = 'both' }: { children?: Rea
         </div>
 
         {/* 广告栏 */}
-        <a href="https://www.junkuatech.com/index.html?code=cunzhang" target="_blank" rel="noreferrer"
+        <a href="https://www.junkuatech.com/index.html?code=cunzhang&promo=CUNZHANG" target="_blank" rel="noreferrer"
            className="block w-full rounded-[1.8rem] overflow-hidden shadow-sm border border-gray-100 bg-white group transition-all">
           <div className="relative overflow-hidden bg-gradient-to-br from-[#0f766e]/10 to-[#134e4a]/10 rounded-b-[1.8rem]">
             <img src="/yunsuan.webp" className="w-full h-40 object-cover" alt="YunSuan" />
