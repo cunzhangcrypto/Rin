@@ -330,11 +330,17 @@ export function FeedService(): Hono<{
         const admin = c.get('admin');
         const uid = c.get('uid');
         const id = c.req.param('id');
-        const id_num = parseInt(id);
         const cacheKey = `feed_${id}`;
 
+        // 只有纯数字路径才按 id 匹配，否则按 alias 匹配
+        // （避免数字开头的 alias 如 "3xui" 被 parseInt 误解析成 id，命中错误的文章）
+        const isPureNumeric = /^\d+$/.test(id);
+        const where = isPureNumeric
+            ? eq(feeds.id, parseInt(id))
+            : eq(feeds.alias, id);
+
         const feed = await profileAsync(c, 'feed_detail_cache_db', () => cache.getOrSet(cacheKey, () => db.query.feeds.findFirst({
-            where: or(eq(feeds.id, id_num), eq(feeds.alias, id)),
+            where: where,
             with: {
                 hashtags: {
                     columns: {},
