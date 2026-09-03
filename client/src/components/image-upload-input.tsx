@@ -50,7 +50,7 @@ export function ImageUploadInput({
 
     setUploading(true);
     try {
-      const result = await uploadImageFile(file);
+      const result = await uploadImageFile(file, { convertToWebp: false });
       onChange(result.url);
     } catch (error) {
       showError(error instanceof Error ? error.message : t("upload.failed"));

@@ -15,13 +15,17 @@ interface MarkdownEditorProps {
   setContent: (content: string) => void;
   placeholder?: string;
   height?: string;
+  /** 文章标题，用于生成描述性图片文件名，同时成为 markdown 的 alt 文本 */
+  imageNamePrefix?: string;
 }
 
-export function MarkdownEditor({ content, setContent, placeholder = "> Write your content here...", height = "400px" }: MarkdownEditorProps) {
+export function MarkdownEditor({ content, setContent, placeholder = "> Write your content here...", height = "400px", imageNamePrefix = "" }: MarkdownEditorProps) {
   const { t } = useTranslation();
   const colorMode = useColorMode();
   const editorRef = useRef<editor.IStandaloneCodeEditor>();
   const isComposingRef = useRef(false);
+  // 同一会话内连续插入图片的计数，防止多图 alt 序号重复
+  const imageSeqRef = useRef(0);
   const [preview, setPreview] = useState<'edit' | 'preview' | 'comparison'>('edit');
   const [uploading, setUploading] = useState(false);
   const { showAlert, AlertUI } = useAlert();
@@ -32,12 +36,25 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
     showAlert: (msg: string) => void,
   ) {
     try {
-      const result = await uploadImageFile(file);
+      // 文章标题生成描述性文件名，同时自动转 WebP 减小体积
+      const result = await uploadImageFile(file, { title: imageNamePrefix });
       const editorInstance = editorRef.current;
       if (!editorInstance) return;
+
+      // 统计正文中已有图片数量，给新图 alt 追加序号，避免多图 alt 重复。
+      // imageSeqRef 记录本次编辑会话中连续插入的图片数，确保不重复。
+      imageSeqRef.current += 1;
+      const existingCount =
+        (content.match(/!\[[^\]]*\]\([^)]+\)/g)?.length ?? 0) +
+        (content.match(/<img\b[^>]*>/gi)?.length ?? 0);
+      const seq = existingCount + imageSeqRef.current;
+
+      const baseAlt = (imageNamePrefix || file.name.replace(/\.[^/.]+$/, "")).trim() || "image";
+      const altText = `${baseAlt}-${seq}`;
+
       editorInstance.executeEdits(undefined, [{
         range,
-        text: buildMarkdownImage(file.name, result.url, {
+        text: buildMarkdownImage(altText, result.url, {
           blurhash: result.blurhash,
           width: result.width,
           height: result.height,

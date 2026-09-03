@@ -246,9 +246,74 @@ export async function enrichMarkdownImageMetadata(content: string): Promise<Mark
   };
 }
 
-export async function uploadImageFile(file: File): Promise<UploadedImageResult> {
+/**
+ * 将图片文件在前端转换为 WebP 格式（大幅减小体积，节省 R2 存储与流量）。
+ * - GIF 保留原样（动图转换会丢失动画）。
+ * - 转换失败或浏览器不支持 WebP 编码时返回原文件，不阻塞上传。
+ */
+async function toWebpFile(file: File): Promise<File> {
+  if (file.type === "image/gif" || !file.type.startsWith("image/")) {
+    return file;
+  }
+  try {
+    if (typeof createImageBitmap === "undefined") {
+      return file;
+    }
+    const bitmap = await createImageBitmap(file);
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const context = canvas.getContext("2d");
+    if (!context) {
+      bitmap.close();
+      return file;
+    }
+    context.drawImage(bitmap, 0, 0);
+    bitmap.close();
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/webp", 0.82),
+    );
+    if (!blob) {
+      return file;
+    }
+    const baseName = file.name.replace(/\.[^/.]+$/, "");
+    return new File([blob], `${baseName}.webp`, { type: "image/webp" });
+  } catch {
+    return file;
+  }
+}
+
+/**
+ * 将任意字符串转为 URL-safe 的 slug（用于图片文件名，进 markdown 的 alt）。
+ */
+export function slugify(value: string): string {
+  const latin = value
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "-")
+    .replace(/[^\w\u4e00-\u9fa5-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+  if (latin) {
+    return latin;
+  }
+  // 全中文标题时转拼音会引入额外依赖，这里用「image」兜底
+  return "image";
+}
+
+export interface UploadImageOptions {
+  /** 文章标题，用于生成描述性的图片文件名（同时成为 markdown 的 alt 文本） */
+  title?: string;
+  /** 是否在前端自动转换为 WebP（默认开启；头像/OG 图等希望保留原格式的场景可关闭） */
+  convertToWebp?: boolean;
+}
+
+export async function uploadImageFile(file: File, options?: UploadImageOptions): Promise<UploadedImageResult> {
+  const webpFile = options?.convertToWebp === false ? file : await toWebpFile(file);
+  // 有标题时用标题 slug 作为文件名（会成为 alt 文本，利于 SEO/GEO）
+  const fileName = options?.title ? `${slugify(options.title)}.${webpFile.name.split(".").pop()}` : webpFile.name;
+
   const [uploadResult, metadataResult] = await Promise.allSettled([
-    client.storage.upload(file, file.name),
+    client.storage.upload(webpFile, fileName),
     generateImageMetadata(file),
   ]);
 
