@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Padding as RinPadding } from "@rin/ui";
 import { client } from "../app/runtime";
+import { fetchTools, getToolEmoji, pickRandomTools, type ToolItem } from "../utils/tools";
 
 const SOCIAL_LINKS = [
   { platform: 'youtube', url: 'https://youtube.com/@cunzhanglab' },
@@ -15,14 +16,6 @@ const SERVICES = [
   '开源项目部署',
   'Cloudflare 技术',
   'Web3 实践分享',
-];
-
-const UTILITY_TOOLS = [
-  { emoji: '🔧', text: '便宜共享ip', link: 'https://proxy6.net/en/?r=648253' },
-  { emoji: '🌐', text: '香港VISA卡', link: 'https://www.cunzhangblog.com/pokepay' },
-  { emoji: '📹', text: '指纹浏览器', link: 'https://www.cunzhangblog.com/bitbrowser' },
-  { emoji: '🖼️', text: 'eSIM神器', link: 'https://www.cunzhangblog.com/estk' },
-  { emoji: '📹', text: 'Gate交易所', link: 'https://www.gateweb.xyz/share/cunzhang' },
 ];
 
 // 首页右侧「常见问题」区，内容与 faq-page.json / faq.zh.html 资产逐字一致
@@ -69,6 +62,8 @@ const getSocialIcon = (platform: string) => {
 
 export function Padding({ children, className, mode = 'both' }: { children?: React.ReactNode, className?: string, mode?: 'left' | 'right' | 'both' }) {
   const [data, setData] = useState<any>(null);
+  // 「实用工具」：从 /tools.md 随机抽 8 条，每次刷新更换
+  const [dailyTools, setDailyTools] = useState<ToolItem[]>([]);
 
   useEffect(() => {
     if (mode === 'right') {
@@ -78,6 +73,9 @@ export function Padding({ children, className, mode = 'both' }: { children?: Rea
           if (data && Array.isArray(data)) setData(data);
         })
         .catch(err => console.error("Recommend Load Failed:", err));
+    }
+    if (mode === 'left') {
+      fetchTools().then((items) => setDailyTools(pickRandomTools(items, 8)));
     }
   }, [mode]);
 
@@ -126,37 +124,6 @@ export function Padding({ children, className, mode = 'both' }: { children?: Rea
         </div>
 
         {/* 广告栏 */}
-        <a href="https://www.junkuatech.com/index.html?code=cunzhang&promo=CUNZHANG" target="_blank" rel="noreferrer"
-           className="block w-full rounded-[1.8rem] overflow-hidden shadow-sm border border-gray-100 bg-white group transition-all">
-          <div className="relative overflow-hidden bg-gradient-to-br from-[#0f766e]/10 to-[#134e4a]/10 rounded-b-[1.8rem]">
-            <img src="/yunsuan.webp" className="w-full h-40 object-cover" alt="YunSuan" />
-          </div>
-          <div className="p-3.5 border-t border-gray-50 bg-white">
-            <h4 className="text-gray-800 font-bold text-[15px] truncate mb-1">欧美电商双ISP</h4>
-            <div className="flex items-center justify-between">
-              <span className="text-[#0f766e] text-[12px] font-bold bg-teal-50 px-1.5 py-0.5 rounded-md">专为TikTok/亚马逊打造</span>
-              <span className="text-gray-300 group-hover:text-[#0f766e] transition-colors text-xs">→</span>
-            </div>
-          </div>
-        </a>
-
-        {/* 实用工具 */}
-        <div className="bg-white rounded-[1.8rem] p-4 border border-gray-100 shadow-sm text-left">
-          <h4 className="text-[11px] font-black text-gray-400 mb-3 tracking-widest uppercase flex items-center px-1">
-            <span className="w-1 h-1 bg-[#0f766e] mr-2 rounded-full"></span> 实用工具
-          </h4>
-          <nav className="flex flex-col gap-0.5">
-            {UTILITY_TOOLS.map((item, i) => (
-              <a key={i} href={item.link} target="_blank" rel="noopener"
-                 className="flex items-center py-2 px-2 rounded-xl hover:bg-teal-50 text-gray-700 font-bold text-[14px] transition-all">
-                <span className="text-base">{item.emoji}</span>
-                <span className="ml-3 flex-1 truncate">{item.text}</span>
-              </a>
-            ))}
-          </nav>
-        </div>
-
-        {/* 广告栏 */}
         <a href="https://geonix.com/?partner_link=hr7qyBUuqy" target="_blank" rel="noreferrer"
            className="block w-full rounded-[1.8rem] overflow-hidden shadow-sm border border-gray-100 bg-white group transition-all">
           <div className="relative overflow-hidden bg-gradient-to-br from-[#0f766e]/10 to-[#134e4a]/10 rounded-b-[1.8rem]">
@@ -166,6 +133,37 @@ export function Padding({ children, className, mode = 'both' }: { children?: Rea
             <h4 className="text-gray-800 font-bold text-[15px] truncate mb-1">出海必备 · 静态住宅IP</h4>
             <div className="flex items-center justify-between">
               <span className="text-[#0f766e] text-[12px] font-bold bg-teal-50 px-1.5 py-0.5 rounded-md">全球覆盖 · 不限速</span>
+              <span className="text-gray-300 group-hover:text-[#0f766e] transition-colors text-xs">→</span>
+            </div>
+          </div>
+        </a>
+
+        {/* 实用工具：随机 8 条，来源同「今日工具推荐」 */}
+        <div className="bg-white rounded-[1.8rem] p-4 border border-gray-100 shadow-sm text-left">
+          <h4 className="text-[11px] font-black text-gray-400 mb-3 tracking-widest uppercase flex items-center px-1">
+            <span className="w-1 h-1 bg-[#0f766e] mr-2 rounded-full"></span> 实用工具
+          </h4>
+          <nav className="flex flex-col gap-0.5">
+            {dailyTools.map((item, i) => (
+              <a key={i} href={item.url} target="_blank" rel="noopener"
+                 className="flex items-center py-2 px-2 rounded-xl hover:bg-teal-50 text-gray-700 font-bold text-[14px] transition-all">
+                <span className="text-base">{getToolEmoji(item.name, item.desc)}</span>
+                <span className="ml-3 flex-1 truncate">{item.name}</span>
+              </a>
+            ))}
+          </nav>
+        </div>
+
+        {/* 广告栏 */}
+        <a href="https://www.junkuatech.com/index.html?code=cunzhang&promo=CUNZHANG" target="_blank" rel="noreferrer"
+           className="block w-full rounded-[1.8rem] overflow-hidden shadow-sm border border-gray-100 bg-white group transition-all">
+          <div className="relative overflow-hidden bg-gradient-to-br from-[#0f766e]/10 to-[#134e4a]/10 rounded-b-[1.8rem]">
+            <img src="/yunsuan.webp" className="w-full h-40 object-cover" alt="YunSuan" />
+          </div>
+          <div className="p-3.5 border-t border-gray-50 bg-white">
+            <h4 className="text-gray-800 font-bold text-[15px] truncate mb-1">欧美电商双ISP</h4>
+            <div className="flex items-center justify-between">
+              <span className="text-[#0f766e] text-[12px] font-bold bg-teal-50 px-1.5 py-0.5 rounded-md">专为TikTok/亚马逊打造</span>
               <span className="text-gray-300 group-hover:text-[#0f766e] transition-colors text-xs">→</span>
             </div>
           </div>

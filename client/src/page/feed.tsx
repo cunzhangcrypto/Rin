@@ -20,6 +20,9 @@ import { Tips } from "../components/tips";
 import mermaid from "mermaid";
 import { AdjacentSection } from "../components/adjacent_feed.tsx";
 import { stripImageUrlMetadata } from "../utils/image-upload";
+import { fetchTools, getToolEmoji, pickRandomTools, type ToolItem } from "../utils/tools";
+import { InlineAd } from "../components/inline_ad";
+import { splitMarkdownInMiddle } from "../utils/ads";
 import { Reward } from "../components/reward";
 import { BACK_TO_LIST_KEY } from "../components/feed_card";
 
@@ -29,68 +32,18 @@ function toAbsoluteUrl(url?: string | null) {
   return `${window.location.origin}${url.startsWith("/") ? "" : "/"}${url}`;
 }
 
-type ToolItem = { name: string; url: string; desc: string };
-
-// 工具名称+描述关键词 → emoji 图标自动匹配（按顺序，第一个命中的生效）
-const TOOL_EMOJI_MAP: [RegExp, string][] = [
-  [/pdf|word|文档/i, "📄"],
-  [/音乐|播放器/i, "🎵"],
-  [/下载|idm|gopeed|reclip/i, "⬇️"],
-  [/录屏|屏幕|obs/i, "🖥️"],
-  [/浏览器|chrome|插件/i, "🌐"],
-  [/清理|卸载|禁止更新/i, "🧹"],
-  [/水印/i, "🖼️"],
-  [/语音|voice|声音/i, "🎙️"],
-  [/qwen|ai|大模型|llm|模型/i, "🤖"],
-  [/ppt/i, "📊"],
-  [/网盘|转存/i, "☁️"],
-  [/ffmpeg|压缩|转码/i, "🎞️"],
-  [/文件传输|传输/i, "📁"],
-  [/投屏|手机/i, "📱"],
-  [/复制/i, "📋"],
-  [/字幕|剪辑|剪映|视频/i, "🎬"],
-  [/ocr|识别/i, "🔍"],
-];
-
-function getToolEmoji(name: string, desc: string): string {
-  const text = `${name} ${desc}`;
-  for (const [pattern, emoji] of TOOL_EMOJI_MAP) {
-    if (pattern.test(text)) return emoji;
-  }
-  return "📦";
-}
-
 // 今日工具推荐：从 tools.md 随机抽取 2 个展示，刷新更换
 function TodayTools() {
   const [tools, setTools] = useState<ToolItem[]>([]);
   const [picked, setPicked] = useState<ToolItem[]>([]);
 
   useEffect(() => {
-    fetch("/tools.md")
-      .then((res) => res.text())
-      .then((text) => {
-        const items = text
-          .split("\n")
-          .map((line) => line.trim())
-          .filter((line) => line && !line.startsWith("#"))
-          .map((line) => {
-            const parts = line.split(" - ");
-            const name = parts[0]?.trim();
-            const url = parts[1]?.trim();
-            const desc = parts.slice(2).join(" - ").trim();
-            if (!name || !url || !/^https?:\/\//.test(url)) return null;
-            return { name, url, desc };
-          })
-          .filter(Boolean) as ToolItem[];
-        setTools(items);
-      })
-      .catch(() => {});
+    fetchTools().then(setTools);
   }, []);
 
   useEffect(() => {
     if (tools.length === 0) return;
-    const shuffled = [...tools].sort(() => Math.random() - 0.5);
-    setPicked(shuffled.slice(0, 2));
+    setPicked(pickRandomTools(tools, 2));
   }, [tools]);
 
   if (picked.length === 0) return null;
@@ -474,7 +427,16 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
                     ) : null}
                   </div>
                 )}
-                <Markdown content={feed.content} />
+                {(() => {
+                  const [contentHead, contentTail] = splitMarkdownInMiddle(feed.content);
+                  return (
+                    <>
+                      <Markdown content={contentHead} />
+                      <InlineAd />
+                      <Markdown content={contentTail} />
+                    </>
+                  );
+                })()}
                 <TodayTools />
                 <Reward />
                 {/* Author card */}
