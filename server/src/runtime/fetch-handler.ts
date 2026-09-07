@@ -2,6 +2,7 @@ import { and, desc, eq, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { getApp } from "./app-instance";
 import { escapeHtml, markdownToHtml } from "../utils/markdown-html";
+import { stripMarkdown, extractFaq } from "../utils/seo-markdown";
 import { buildSnapshotKey } from "../utils/prerender-snapshot";
 import { getStorageObject } from "../utils/storage";
 
@@ -107,7 +108,13 @@ async function serveSpaEntry(request: Request, env: Env) {
   return null;
 }
 
-function injectMeta(html: string, title: string, description: string, structuredData?: string) {
+interface OgMeta {
+  url?: string;
+  image?: string;
+  type?: string;
+}
+
+function injectMeta(html: string, title: string, description: string, structuredData?: string, og?: OgMeta) {
   let result = html;
 
   const escapedTitle = title.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -119,6 +126,22 @@ function injectMeta(html: string, title: string, description: string, structured
     /<meta name="description" content=".*?"(\s*\/?)>/,
     `<meta name="description" content="${escapedDesc}"$1>`,
   );
+
+  // Open Graph：逐页改写，让微信/Telegram/X 等分享爬虫拿到当前页面的标题/描述
+  result = result.replace(/<meta[^>]*property="og:title"[^>]*\/?>/, `<meta property="og:title" content="${escapedTitle}" />`);
+  result = result.replace(
+    /<meta[^>]*property="og:description"[^>]*\/?>/,
+    `<meta property="og:description" content="${escapedDesc}" />`,
+  );
+  if (og?.url) {
+    result = result.replace(/<meta[^>]*property="og:url"[^>]*\/?>/, `<meta property="og:url" content="${escapeHtml(og.url)}" />`);
+  }
+  if (og?.image) {
+    result = result.replace(/<meta[^>]*property="og:image"[^>]*\/?>/, `<meta property="og:image" content="${escapeHtml(og.image)}" />`);
+  }
+  if (og?.type) {
+    result = result.replace(/<meta[^>]*property="og:type"[^>]*\/?>/, `<meta property="og:type" content="${escapeHtml(og.type)}" />`);
+  }
 
   if (structuredData) {
     const tag = `<script type="application/ld+json">${structuredData}</script>`;
@@ -271,6 +294,9 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
   let title = `${siteName} | AI工具、技术实操、网络媒体运营 - 探索技术出海与变现`;
   let description = "面向中文互联网用户，分享AI工具、技术实操与变现方法的技术博客";
   let structuredData: string | undefined;
+  let ogUrl: string | undefined;
+  let ogImage: string | undefined;
+  let ogType: string | undefined;
   let bodyHtml = "";
 
   // 预渲染首页：前 10 条已发布文章卡片（标题+摘要+链接）
@@ -315,7 +341,7 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
     try {
       const feed = await db.query.feeds.findFirst({
         where: and(eq(schema.feeds.alias, alias), eq(schema.feeds.draft, 0), or(eq(schema.feeds.listed, 1), eq(schema.feeds.ai_visible, 1))),
-        columns: { id: true, title: true, content: true, summary: true, createdAt: true, updatedAt: true },
+        columns: { id: true, title: true, content: true, summary: true, ai_summary: true, createdAt: true, updatedAt: true },
         with: {
           user: { columns: { username: true } },
           hashtags: { columns: {}, with: { hashtag: { columns: { name: true } } } },
@@ -325,7 +351,9 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
       if (feed) {
         feedFound = true;
         const feedTitle = feed.title || "未命名";
-        const rawDesc = feed.summary || (feed.content ? feed.content.substring(0, 200) : "");
+        // 描述优先用人工摘要 / AI 摘要，避免把 markdown 语法（##、|、链接）混入 SEO description
+        const summaryText = feed.summary?.trim() || feed.ai_summary?.trim() || "";
+        const rawDesc = summaryText || stripMarkdown(feed.content || "").substring(0, 200);
         title = `${feedTitle} - ${siteName}`;
         if (rawDesc) description = rawDesc;
         const tags = feed.hashtags.map((h: any) => h.hashtag.name);
@@ -340,26 +368,51 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
           feedImage = rawUrl.startsWith("http") ? rawUrl : `https://www.cunzhangblog.com${rawUrl.startsWith("/") ? "" : "/"}${rawUrl}`;
         }
 
-        structuredData = JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "BlogPosting",
-          "@id": `${feedUrl}#article`,
-          url: feedUrl,
-          headline: feedTitle,
-          description: rawDesc || description,
-          image: [feedImage || "https://www.cunzhangblog.com/logo.png"],
-          datePublished: feed.createdAt,
-          dateModified: feed.updatedAt,
-          author: { "@id": "https://www.cunzhangblog.com/#person" },
-          publisher: { "@id": "https://www.cunzhangblog.com/#organization" },
-          mainEntityOfPage: {
-            "@type": "WebPage",
-            "@id": feedUrl,
+        // OG 逐页：分享到微信/Telegram/X 等平台的卡片标题、描述、配图取当前文章
+        ogUrl = feedUrl;
+        ogImage = feedImage || "https://www.cunzhangblog.com/og-image-v2.png";
+        ogType = "article";
+
+        const graph: any[] = [
+          {
+            "@type": "BlogPosting",
+            "@id": `${feedUrl}#article`,
+            url: feedUrl,
+            headline: feedTitle,
+            description: rawDesc || description,
+            image: [feedImage || "https://www.cunzhangblog.com/logo.png"],
+            datePublished: feed.createdAt,
+            dateModified: feed.updatedAt,
+            author: { "@id": "https://www.cunzhangblog.com/#person" },
+            publisher: { "@id": "https://www.cunzhangblog.com/#organization" },
+            mainEntityOfPage: {
+              "@type": "WebPage",
+              "@id": feedUrl,
+            },
+            articleSection: firstTag,
+            wordCount: (feed.content || "").length,
+            keywords: tags,
           },
-          articleSection: firstTag,
-          wordCount: (feed.content || "").length,
-          keywords: tags,
-        });
+        ];
+
+        // 文章级 FAQPage 结构化数据：解析正文 FAQ 小节，便于 Google/AI 引擎摘录
+        try {
+          const faqItems = extractFaq(feed.content || "");
+          if (faqItems.length > 0) {
+            graph.push({
+              "@type": "FAQPage",
+              mainEntity: faqItems.map(({ q, a }) => ({
+                "@type": "Question",
+                name: q,
+                acceptedAnswer: { "@type": "Answer", text: a },
+              })),
+            });
+          }
+        } catch (error) {
+          console.error("[prerender-faq]", error);
+        }
+
+        structuredData = JSON.stringify({ "@context": "https://schema.org", "@graph": graph });
 
         // 预渲染文章正文（markdown → HTML）
         if (feed.content) {
@@ -384,7 +437,7 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
     }
   }
 
-  const modifiedHtml = injectMeta(html, title, description, structuredData);
+  const modifiedHtml = injectMeta(html, title, description, structuredData, { url: ogUrl, image: ogImage, type: ogType });
   const finalHtml = injectBody(modifiedHtml, bodyHtml + STATIC_FOOTER_HTML);
   return new Response(injectRobots(injectCanonical(finalHtml, canonicalUrl), shouldNoindex(pathname)), {
     status: indexResponse.status,
