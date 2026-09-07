@@ -9,6 +9,7 @@ import { getStorageObject } from "../utils/storage";
 const ROOT_FEED_PATTERN = /^\/(rss\.xml|atom\.xml|rss\.json|feed\.json|feed\.xml|sitemap-posts\.json)$/;
 const APP_PUBLIC_ROUTE_PATTERN = /^\/(favicon)(?:\/|$)/;
 const LEGACY_FEED_PATH_PATTERN = /^\/feed\/[^/]+$/;
+const LEGACY_ARTICLE_PATH_PATTERN = /^\/article\/[^/]+$/;
 
 // 美观的 404 页面（自包含 HTML，无需前端 JS）
 const NOT_FOUND_HTML = `<!DOCTYPE html>
@@ -201,6 +202,20 @@ function renderFeedCards(
   return `<div class="prerender-list">${cards.join("")}</div>`;
 }
 
+// 预渲染：首页热门分类导航（标签名+跳转链接），供 AI/社交爬虫直接读取分类入口
+function renderHotCategories(tags: { name: string; feeds: number }[]): string {
+  if (tags.length === 0) {
+    return "";
+  }
+  const links = tags
+    .map(
+      (tag) =>
+        `<a class="text-sm font-normal rounded-full px-3 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-theme hover:text-white transition-colors" href="/hashtag/${encodeURIComponent(tag.name)}">${escapeHtml(tag.name)}</a>`,
+    )
+    .join("");
+  return `<div class="wauto flex flex-row flex-wrap items-center gap-2 mt-4"><span class="text-sm text-neutral-500 font-normal shrink-0">热门分类</span>${links}</div>`;
+}
+
 // 预渲染：把渲染好的正文/列表 HTML 注入 <div id="root">，React 挂载时会自动替换
 function injectBody(html: string, bodyHtml: string): string {
   if (!bodyHtml) {
@@ -216,14 +231,14 @@ const STATIC_FOOTER_HTML = `
   <p>© 2026 Web3村长 <a href="https://cunzhangai.com/" style="color:#4f46e5">AI工具箱</a> | <a href="/geo" style="color:#4f46e5">品牌档案</a> | <a href="/rss.xml" style="color:#4f46e5">RSS</a></p>
 </footer>`;
 
-// 旧版 /feed/:id 链接：若文章有别名，301 重定向到根路径别名，保证全站统一用别名 URL
-async function tryRedirectLegacyFeedPath(request: Request, env: Env): Promise<Response | null> {
+// 旧版 /feed/:id 与 /article/:slug 链接：若文章有别名，301 重定向到根路径别名，统一用别名 URL
+async function tryRedirectLegacyPath(request: Request, env: Env, prefix: string): Promise<Response | null> {
   const url = new URL(request.url);
   if (!env.DB) return null;
 
   const schema = await import("../db/schema");
   const db = drizzle(env.DB, { schema });
-  const id = url.pathname.replace(/^\/feed\//, "");
+  const id = url.pathname.replace(new RegExp(`^\\/${prefix}\\/`), "");
   const id_num = parseInt(id);
 
   try {
@@ -314,6 +329,17 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
         alias: f.alias,
         summary: f.summary && f.summary.length > 0 ? f.summary : (f.content || "").slice(0, 100),
       })));
+
+      // 预渲染首页热门分类导航：取文章关联数最多的 8 个标签，与客户端 client.tag.list() 逻辑保持一致
+      const tagList = await db.query.hashtags.findMany({
+        with: { feeds: { columns: { feedId: true } } },
+      });
+      const hotCategories = (tagList as any[])
+        .map((tag: any) => ({ name: tag.name, feeds: tag.feeds.length }))
+        .filter((tag) => tag.feeds > 0)
+        .sort((a, b) => b.feeds - a.feeds)
+        .slice(0, 8);
+      bodyHtml += renderHotCategories(hotCategories);
     } catch (error) {
       console.error("[prerender-home]", error);
     }
@@ -471,7 +497,15 @@ export async function handleFetch(request: Request, env: Env): Promise<Response>
 
   // 旧版 /feed/:id（数字或别名）链接：有别名则 301 到根路径别名
   if (LEGACY_FEED_PATH_PATTERN.test(pathname)) {
-    const legacyRedirect = await tryRedirectLegacyFeedPath(request, env);
+    const legacyRedirect = await tryRedirectLegacyPath(request, env, "feed");
+    if (legacyRedirect) {
+      return legacyRedirect;
+    }
+  }
+
+  // 旧版 /article/:slug 链接：有别名则 301 到根路径别名，避免老外链成为孤儿/死链
+  if (LEGACY_ARTICLE_PATH_PATTERN.test(pathname)) {
+    const legacyRedirect = await tryRedirectLegacyPath(request, env, "article");
     if (legacyRedirect) {
       return legacyRedirect;
     }

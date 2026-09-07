@@ -39,6 +39,7 @@ export function FeedsPage() {
     const limit = tryInt(siteConfig.pageSize, query.get("limit"))
     const feedListClass = siteConfig.feedLayout === "masonry" ? "wauto columns-1 gap-5 ani-show md:columns-2" : "wauto flex flex-col ani-show";
     const ref = useRef("")
+    const [hotTags, setHotTags] = useState<{ name: string; feeds: number }[]>([])
     function fetchFeeds(type: FeedType) {
         client.feed.list({
             page: page,
@@ -65,6 +66,21 @@ export function FeedsPage() {
         fetchFeeds(type)
         ref.current = key
     }, [limit, query.get("page"), query.get("type")])
+
+    // 首页分类导航：拉取文章数最多的标签作为「热门分类」入口
+    useEffect(() => {
+        client.tag.list().then(({ data }) => {
+            if (data) {
+                setHotTags(
+                    (data as any[])
+                        .filter((t) => t.feeds > 0)
+                        .sort((a, b) => (b.feeds ?? 0) - (a.feeds ?? 0))
+                        .slice(0, 8)
+                        .map((t) => ({ name: t.name, feeds: t.feeds })),
+                );
+            }
+        });
+    }, [])
     return (
         <>
             <Helmet>
@@ -105,6 +121,20 @@ export function FeedsPage() {
                             }
                         </div>
                     </div>
+                    {listState === 'normal' && page === 1 && hotTags.length > 0 && (
+                        <div className="wauto flex flex-row flex-wrap items-center gap-2 mt-4">
+                            <span className="text-sm text-neutral-500 font-normal shrink-0">{t('hot_categories')}</span>
+                            {hotTags.map((tag) => (
+                                <Link
+                                    key={tag.name}
+                                    href={`/hashtag/${tag.name}`}
+                                    className="text-sm font-normal rounded-full px-3 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-theme hover:text-white transition-colors"
+                                >
+                                    {tag.name}
+                                </Link>
+                            ))}
+                        </div>
+                    )}
                     <Waiting for={status === 'idle'}>
                         <div className={feedListClass}>
                             {feeds[listState].data.map(({ id, ...feed }: any) => (

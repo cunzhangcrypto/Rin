@@ -73,10 +73,8 @@ export function HashtagPage({ name }: { name: string }) {
 
         if (currentLang.startsWith('en')) {
             return `${count} ${count === 1 ? 'article' : 'articles'} in total`;
-        } else if (currentLang.startsWith('ja')) {
-            return `合計 ${count} 記事`;
         } else {
-            // 默认中文（包括 zh-CN, zh-TW）
+            // 默认中文
             return `共有 ${count} 篇文章`;
         }
     };

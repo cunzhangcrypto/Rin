@@ -21,7 +21,11 @@ export function bootstrapApp() {
       backend: {
         loadPath: "/locales/{{lng}}/{{ns}}.json",
       },
-      fallbackLng: "en",
+      // 仅保留中英文，默认中文
+      lng: "zh-CN",
+      fallbackLng: "zh-CN",
+      supportedLngs: ["zh-CN", "en"],
+      nonExplicitSupportedLngs: false,
       interpolation: {
         escapeValue: false,
       },

@@ -99,10 +99,8 @@ export function SearchButton({ className, onClose, plain = false }: { className?
 export function LanguageSwitch({ className, plain = false, popoverUp = false }: { className?: string; plain?: boolean; popoverUp?: boolean }) {
   const { i18n } = useTranslation();
   const languages = [
-    { code: "en", name: "English" },
     { code: "zh-CN", name: "简体中文" },
-    { code: "zh-TW", name: "繁體中文" },
-    { code: "ja", name: "日本語" },
+    { code: "en", name: "English" },
   ];
 
   return (

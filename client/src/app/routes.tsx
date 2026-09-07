@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useContext, useLayoutEffect } from "react"; // 使用 useLayoutEffect 确保在渲染前锁定标题
+import { lazy, Suspense, useContext, useLayoutEffect } from "react"; // 使用 useLayoutEffect 确保在渲染前锁定标题
 import type { DefaultParams, PathPattern } from "wouter";
 import { Route, Switch } from "wouter";
 import { AdminLayout } from "../components/admin-layout";
@@ -14,7 +14,7 @@ import { AdminRecommendPage } from "../page/admin-recommend";
 import { CallbackPage } from "../page/callback";
 import { CompatTasksPage } from "../page/compat-tasks";
 import { ErrorPage } from "../page/error";
-import { FeedPage, TOCHeader } from "../page/feed";
+import { TOCHeader } from "../components/toc-header";
 import { FeedsPage } from "../page/feeds";
 import { FriendsPage } from "../page/friends";
 import { GeoPage } from "../page/geo";
@@ -22,21 +22,26 @@ import { HealthPage } from "../page/health";
 import { HashtagPage } from "../page/hashtag";
 import { HashtagsPage } from "../page/hashtags";
 import { LoginPage } from "../page/login";
-import { MomentsPage } from "../page/moments";
 import { ProfilePage } from "../page/profile";
 import { QueueStatusPage } from "../page/queue-status";
 import { SearchPage } from "../page/search";
 import { Settings } from "../page/settings";
 import { TimelinePage } from "../page/timeline";
-import { WritingPage } from "../page/writing";
 import { ProfileContext } from "../state/profile";
 import { tryInt } from "../utils/int";
 import { useTranslation } from "react-i18next";
+
+// 重页面按需懒加载：文章页(mermaid+Markdown)、动态、写作页(monaco+mermaid)
+// 移出首包，进入对应路由时才加载，首页首包显著变小，功能与路由行为完全不变。
+const LazyFeedPage = lazy(() => import("../page/feed").then((m) => ({ default: m.FeedPage })));
+const LazyMomentsPage = lazy(() => import("../page/moments").then((m) => ({ default: m.MomentsPage })));
+const LazyWritingPage = lazy(() => import("../page/writing").then((m) => ({ default: m.WritingPage })));
 
 export function AppRoutes() {
   const { t } = useTranslation();
 
   return (
+    <Suspense fallback={<div className="w-full min-h-[40vh] flex items-center justify-center text-sm t-secondary">Loading…</div>}>
     <Switch>
       <AppRoute path="/">
         <FeedsPage />
@@ -47,7 +52,7 @@ export function AppRoutes() {
       </AppRoute>
 
       <AppRoute path="/moments">
-        <MomentsPage />
+        <LazyMomentsPage />
       </AppRoute>
 
       <AppRoute path="/friends">
@@ -91,11 +96,11 @@ export function AppRoutes() {
       </AdminRoute>
 
       <AdminRoute path="/admin/writing" requirePermission title={t("writing")} description={t("admin.writing_description")}>
-        <WritingPage />
+        <LazyWritingPage />
       </AdminRoute>
 
       <AdminRoute path="/admin/writing/:id" requirePermission title={t("writing")} description={t("admin.writing_description")}>
-        {({ id }) => <WritingPage id={tryInt(0, id)} />}
+        {({ id }) => <LazyWritingPage id={tryInt(0, id)} />}
       </AdminRoute>
 
       <AppRoute path="/callback">
@@ -111,11 +116,11 @@ export function AppRoutes() {
       </AppRoute>
 
       <TocRoute path="/feed/:id">
-        {(params, toc, cleanup) => <FeedPage id={params.id || ""} TOC={toc} clean={cleanup} />}
+        {(params, toc, cleanup) => <LazyFeedPage id={params.id || ""} TOC={toc} clean={cleanup} />}
       </TocRoute>
 
       <TocRoute path="/:alias">
-        {(params, toc, cleanup) => <FeedPage id={params.alias || ""} TOC={toc} clean={cleanup} />}
+        {(params, toc, cleanup) => <LazyFeedPage id={params.alias || ""} TOC={toc} clean={cleanup} />}
       </TocRoute>
 
       <AppRoute path="/user/github">
@@ -140,6 +145,7 @@ export function AppRoutes() {
         <ErrorPage error={t("error.not_found")} />
       </AppRoute>
     </Switch>
+    </Suspense>
   );
 }
 

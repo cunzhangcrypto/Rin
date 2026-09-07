@@ -745,5 +745,6 @@
   },
   "sort_latest": "Latest",
   "sort_popular": "Popular",
-  "total_tags": "Total {{count}} tags"
+  "total_tags": "Total {{count}} tags",
+  "hot_categories": "Hot categories"
 }
