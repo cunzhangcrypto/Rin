@@ -31,7 +31,7 @@ export function useSiteConfig() {
         name: config.get<string>(SITE_CONFIG_KEYS.name) || "Web3村长",
         description: config.get<string>(SITE_CONFIG_KEYS.description) || "",
         avatar: config.get<string>(SITE_CONFIG_KEYS.avatar) || "",
-        pageSize: Number.isFinite(parsedPageSize) ? parsedPageSize : 5,
+        pageSize: Number.isFinite(parsedPageSize) ? parsedPageSize : 8,
         headerBehavior: config.get<string>(SITE_CONFIG_KEYS.headerBehavior) || "fixed",
         feedLayout: normalizeFeedLayout(config.get<string>(SITE_CONFIG_KEYS.feedLayout) || "list"),
         feedCardVariant: normalizeFeedCardVariant(config.get<string>(SITE_CONFIG_KEYS.feedCardVariant) || "default"),

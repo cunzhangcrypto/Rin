@@ -314,14 +314,14 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
   let ogType: string | undefined;
   let bodyHtml = "";
 
-  // 预渲染首页：前 10 条已发布文章卡片（标题+摘要+链接）
+  // 预渲染首页：前 8 条已发布文章卡片（标题+摘要+链接），与客户端默认 pageSize 对齐
   if (pathname === "/") {
     try {
       const list = await db.query.feeds.findMany({
         where: and(eq(schema.feeds.draft, 0), eq(schema.feeds.listed, 1)),
         columns: { id: true, title: true, summary: true, alias: true, content: true },
         orderBy: [desc(schema.feeds.top), desc(schema.feeds.createdAt), desc(schema.feeds.updatedAt)],
-        limit: 10,
+        limit: 8,
       });
       bodyHtml = renderFeedCards(list.map((f: any) => ({
         id: f.id,

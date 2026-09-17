@@ -3,7 +3,7 @@ import type { CacheImpl, DB } from "../core/hono-types";
 import { feeds } from "../db/schema";
 import { syncFeedAISummaryQueueState } from "./feed-ai-summary";
 import { clearFeedCache } from "./feed";
-import { contentHasImagesMissingMetadata } from "../utils/image";
+import { contentHasImagesMissingMetadata, contentHasImagesMissingThumb } from "../utils/image";
 import { getAIConfig } from "../utils/db-config";
 
 type ConfigReader = {
@@ -59,6 +59,9 @@ export async function buildCompatTasksResponse(db: DB, serverConfig: ConfigReade
     },
     blurhash: {
       eligible: items.filter((item) => contentHasImagesMissingMetadata(item.content)).length,
+    },
+    thumbnail: {
+      eligible: items.filter((item) => contentHasImagesMissingThumb(item.content)).length,
     },
   };
 }
@@ -135,7 +138,28 @@ export async function listBlurhashCompatCandidates(db: DB) {
   };
 }
 
+export async function listThumbnailCompatCandidates(db: DB) {
+  const items = await db.query.feeds.findMany({
+    columns: {
+      id: true,
+      title: true,
+      content: true,
+    },
+    orderBy: [desc(feeds.updatedAt)],
+  });
+
+  return {
+    generatedAt: new Date().toISOString(),
+    items: items.filter((item) => contentHasImagesMissingThumb(item.content)),
+  };
+}
+
 export async function applyBlurhashCompatUpdate(db: DB, cache: CacheImpl, feedId: number, content: string) {
+  return applyCompatContentUpdate(db, cache, feedId, content);
+}
+
+// 兼容任务通用的正文回写：内容有变化才更新，并清理该文章相关缓存
+export async function applyCompatContentUpdate(db: DB, cache: CacheImpl, feedId: number, content: string) {
   const feed = await db.query.feeds.findFirst({
     where: eq(feeds.id, feedId),
     columns: {
@@ -158,3 +182,5 @@ export async function applyBlurhashCompatUpdate(db: DB, cache: CacheImpl, feedId
 
   return { updated: true };
 }
+
+export const applyThumbnailCompatUpdate = applyCompatContentUpdate;

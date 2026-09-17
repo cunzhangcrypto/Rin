@@ -12,10 +12,12 @@ import { useSiteConfig } from "../hooks/useSiteConfig";
 // 记住来源列表位置（含分页参数），供文章页"返回列表"按钮跳回原分页
 export const BACK_TO_LIST_KEY = "rin:back_to_list_url";
 
-function FeedCardImage({ src, variant }: { src: string; variant: FeedCardVariant }) {
+function FeedCardImage({ src, variant, eager = false }: { src: string; variant: FeedCardVariant; eager?: boolean }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const { src: cleanSrc, blurhash, width, height } = parseImageUrlMetadata(src);
-    const { failed, imageRef, loaded, onError, onLoad } = useImageLoadState(cleanSrc);
+    const { src: cleanSrc, thumb, blurhash, width, height } = parseImageUrlMetadata(src);
+    // 首页卡片优先加载缩略图（约 480px WebP），无缩略图时回退原图；详情页仍渲染原图
+    const displaySrc = thumb || cleanSrc;
+    const { failed, imageRef, loaded, onError, onLoad } = useImageLoadState(displaySrc);
     const aspectRatio = width && height ? `${width} / ${height}` : undefined;
     const imageFrameClass =
         variant === "editorial"
@@ -47,8 +49,10 @@ function FeedCardImage({ src, variant }: { src: string; variant: FeedCardVariant
             ) : null}
             <img
                 ref={imageRef}
-                src={cleanSrc}
+                src={displaySrc}
                 alt=""
+                loading={eager ? "eager" : "lazy"}
+                decoding="async"
                 width={width}
                 height={height}
                 onLoad={onLoad}
@@ -102,9 +106,10 @@ export type FeedCardProps = {
     updatedAt: Date;
     preview?: boolean;
     variant?: FeedCardVariant;
+    eager?: boolean;
 };
 
-export function FeedCard({ id, alias, title, avatar, draft, listed, top, summary, hashtags, createdAt, updatedAt, preview = false, variant }: FeedCardProps) {
+export function FeedCard({ id, alias, title, avatar, draft, listed, top, summary, hashtags, createdAt, updatedAt, preview = false, variant, eager = false }: FeedCardProps) {
     const { t } = useTranslation();
     const siteConfig = useSiteConfig();
     const activeVariant = normalizeFeedCardVariant(variant ?? siteConfig.feedCardVariant);
@@ -113,7 +118,7 @@ export function FeedCard({ id, alias, title, avatar, draft, listed, top, summary
         <div className={styles.card}>
             {avatar ? (
                 <div className={styles.imageWrap}>
-                    <FeedCardImage src={avatar} variant={activeVariant} />
+                    <FeedCardImage src={avatar} variant={activeVariant} eager={eager} />
                 </div>
             ) : null}
             <div className={activeVariant === "editorial" ? "px-2 pb-2" : ""}>

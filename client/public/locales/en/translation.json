@@ -53,6 +53,15 @@
       "run": "Start backfill",
       "progress": "Processed {{processed}} / {{total}}, updated {{updated}} posts, failed {{failed}} posts.",
       "result": "Blurhash backfill finished: scanned {{total}} posts, updated {{updated}}, failed {{failed}}."
+    },
+    "thumbnail": {
+      "title": "Backfill Thumbnails",
+      "description": "Generate ~480px WebP thumbnails for article images that are missing them and re-upload to storage to speed up home page cards.",
+      "eligible": "{{count}} posts pending",
+      "note": "This task runs in the current browser, downloads each image, generates a WebP thumbnail and writes it back into markdown. Run it just once.",
+      "run": "Start backfill",
+      "progress": "Processed {{processed}} / {{total}}, updated {{updated}} posts, failed {{failed}} posts.",
+      "result": "Thumbnail backfill finished: scanned {{total}} posts, updated {{updated}}, failed {{failed}}."
     }
   },
   "ai_summary": {

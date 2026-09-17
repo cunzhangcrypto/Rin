@@ -4,6 +4,7 @@ export async function clearFeedCache(cache: CacheImpl, id: number, alias: string
     await cache.deletePrefix('feeds_');
     await cache.deletePrefix('search_');
     await cache.deletePrefix('recommend_');
+    await cache.deletePrefix('tags_'); // 文章标签变化会影响 /tag/list 计数
     await cache.delete(`feed_${id}`, false);
     await cache.deletePrefix(`${id}_previous_feed`);
     await cache.deletePrefix(`${id}_next_feed`);

@@ -106,6 +106,9 @@ export interface CompatTasksResponse {
   blurhash: {
     eligible: number;
   };
+  thumbnail: {
+    eligible: number;
+  };
 }
 
 export interface CompatAISummaryActionResponse {
@@ -123,6 +126,17 @@ export interface CompatBlurhashCandidate {
 export interface CompatBlurhashCandidatesResponse {
   generatedAt: string;
   items: CompatBlurhashCandidate[];
+}
+
+export interface CompatThumbnailCandidate {
+  id: number;
+  title: string | null;
+  content: string;
+}
+
+export interface CompatThumbnailCandidatesResponse {
+  generatedAt: string;
+  items: CompatThumbnailCandidate[];
 }
 
 export interface CompatBlurhashApplyResponse {
@@ -523,6 +537,14 @@ class ConfigAPI {
 
   async applyCompatBlurhash(feedId: number, content: string): Promise<ApiResponse<CompatBlurhashApplyResponse>> {
     return this.http.post<CompatBlurhashApplyResponse>(`/api/config/compat-tasks/blurhash/${feedId}`, { content });
+  }
+
+  async getCompatThumbnailCandidates(): Promise<ApiResponse<CompatThumbnailCandidatesResponse>> {
+    return this.http.get<CompatThumbnailCandidatesResponse>("/api/config/compat-tasks/thumbnail");
+  }
+
+  async applyCompatThumbnail(feedId: number, content: string): Promise<ApiResponse<CompatBlurhashApplyResponse>> {
+    return this.http.post<CompatBlurhashApplyResponse>(`/api/config/compat-tasks/thumbnail/${feedId}`, { content });
   }
 
   async retryQueueTask(feedId: number): Promise<ApiResponse<QueueTaskActionResponse>> {

@@ -29,18 +29,26 @@ export function useAppBootstrap() {
       applyThemeColor(typeof nextConfig["theme.color"] === "string" ? nextConfig["theme.color"] : undefined);
     };
 
-    client.user.profile().then(({ data, error }) => {
-      if (data) {
-        setProfile({
-          id: data.id,
-          avatar: data.avatar || "",
-          permission: data.permission,
-          name: data.username,
-        });
-      } else if (error) {
-        setProfile(null);
-      }
-    });
+    // 登录态查询不阻塞首屏，等浏览器空闲后再请求，避免与首页 feed/tag 请求抢占带宽
+    const fetchProfile = () => {
+      client.user.profile().then(({ data, error }) => {
+        if (data) {
+          setProfile({
+            id: data.id,
+            avatar: data.avatar || "",
+            permission: data.permission,
+            name: data.username,
+          });
+        } else if (error) {
+          setProfile(null);
+        }
+      });
+    };
+    if (typeof window.requestIdleCallback === "function") {
+      window.requestIdleCallback(fetchProfile, { timeout: 2000 });
+    } else {
+      window.setTimeout(fetchProfile, 200);
+    }
 
     const cachedConfig = sessionStorage.getItem("config");
     const bootstrappedConfig = readBootstrappedClientConfig();

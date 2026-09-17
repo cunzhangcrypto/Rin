@@ -58,6 +58,7 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
           blurhash: result.blurhash,
           width: result.width,
           height: result.height,
+          thumb: result.thumb,
         }),
       }]);
     } catch (error) {

@@ -11,19 +11,25 @@ export function TagService(): Hono {
     // GET /tag
     app.get('/', async (c: AppContext) => {
         const db = c.get('db');
-        
-        const tag_list = await profileAsync(c, 'tag_list_db', () => db.query.hashtags.findMany({
-            with: {
-                feeds: { columns: { feedId: true } }
-            }
+        const cache = c.get('cache');
+
+        const tag_list = await profileAsync(c, 'tag_list_cache_get', () => cache.getOrSet('tags_', async () => {
+            const rows = await profileAsync(c, 'tag_list_db', () => db.query.hashtags.findMany({
+                with: {
+                    feeds: { columns: { feedId: true } }
+                }
+            }));
+
+            return rows.map((tag: any) => ({
+                ...tag,
+                feeds: tag.feeds.length
+            }));
         }));
-        
-        const result = tag_list.map((tag: any) => ({
-            ...tag,
-            feeds: tag.feeds.length
-        }));
-        
-        return c.json(result);
+
+        // 公开只读数据，允许边缘缓存减少 D1 压力
+        c.header('Cache-Control', 'public, max-age=600');
+        c.header('CDN-Cache-Control', 'public, max-age=600');
+        return c.json(tag_list);
     });
 
     // GET /tag/:name

@@ -20,6 +20,8 @@ describe('clearFeedCache', () => {
         expect(deletedPrefixes).toEqual([
             'feeds_',
             'search_',
+            'recommend_',
+            'tags_',
             '42_previous_feed',
             '42_next_feed'
         ]);

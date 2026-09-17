@@ -18,8 +18,10 @@ import { buildQueueStatusResponse, deleteQueueStatusTask, retryQueueStatusTask }
 import { profileAsync } from "../core/server-timing";
 import {
     applyBlurhashCompatUpdate,
+    applyThumbnailCompatUpdate,
     buildCompatTasksResponse,
     listBlurhashCompatCandidates,
+    listThumbnailCompatCandidates,
     runCompatAISummaryBackfill,
 } from "./config-compat-tasks";
 
@@ -241,6 +243,42 @@ export function ConfigService(): Hono {
 
         try {
             return c.json(await wrapTime(c, 'compat_blurhash_apply', applyBlurhashCompatUpdate(c.get('db'), c.get('cache'), id, body.content)));
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            const status = message === 'Feed not found' ? 404 : 400;
+            return c.text(message, status);
+        }
+    });
+
+    app.get('/compat-tasks/thumbnail', async (c: AppContext) => {
+        const admin = c.get('admin');
+
+        if (!admin) {
+            return c.text('Unauthorized', 401);
+        }
+
+        return c.json(await wrapTime(c, 'compat_thumbnail_list', listThumbnailCompatCandidates(c.get('db'))));
+    });
+
+    app.post('/compat-tasks/thumbnail/:id', async (c: AppContext) => {
+        const admin = c.get('admin');
+
+        if (!admin) {
+            return c.text('Unauthorized', 401);
+        }
+
+        const id = Number(c.req.param('id'));
+        if (!Number.isInteger(id) || id <= 0) {
+            return c.text('Invalid feed id', 400);
+        }
+
+        const body = await wrapTime(c, 'request_body', c.req.json()) as { content?: string };
+        if (!body.content) {
+            return c.text('Content is required', 400);
+        }
+
+        try {
+            return c.json(await wrapTime(c, 'compat_thumbnail_apply', applyThumbnailCompatUpdate(c.get('db'), c.get('cache'), id, body.content)));
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             const status = message === 'Feed not found' ? 404 : 400;

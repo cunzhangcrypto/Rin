@@ -7,7 +7,7 @@ import { client } from "../app/runtime";
 import { Button } from "../components/button";
 import { useAlert } from "../components/dialog";
 import { useSiteConfig } from "../hooks/useSiteConfig";
-import { enrichMarkdownImageMetadata } from "../utils/image-upload";
+import { enrichMarkdownImageMetadata, thumbnailizeMarkdownImageMetadata } from "../utils/image-upload";
 
 export function CompatTasksPage() {
   const { t } = useTranslation();
@@ -17,12 +17,15 @@ export function CompatTasksPage() {
   const [status, setStatus] = useState<{
     aiSummary: { enabled: boolean; queueConfigured: boolean; eligible: number; forceEligible: number };
     blurhash: { eligible: number };
+    thumbnail: { eligible: number };
   }>({
     aiSummary: { enabled: false, queueConfigured: false, eligible: 0, forceEligible: 0 },
     blurhash: { eligible: 0 },
+    thumbnail: { eligible: 0 },
   });
-  const [runningTask, setRunningTask] = useState<"ai-summary" | "blurhash" | null>(null);
+  const [runningTask, setRunningTask] = useState<"ai-summary" | "blurhash" | "thumbnail" | null>(null);
   const [blurhashProgress, setBlurhashProgress] = useState({ total: 0, processed: 0, updated: 0, failed: 0 });
+  const [thumbnailProgress, setThumbnailProgress] = useState({ total: 0, processed: 0, updated: 0, failed: 0 });
   const { showAlert, AlertUI } = useAlert();
 
   const loadStatus = () => {
@@ -102,6 +105,51 @@ export function CompatTasksPage() {
       }
 
       showAlert(t("compat_tasks.blurhash.result", { updated, failed, total: items.length }));
+      loadStatus();
+    } finally {
+      setRunningTask(null);
+    }
+  };
+
+  const runThumbnailBackfill = async () => {
+    setRunningTask("thumbnail");
+    setThumbnailProgress({ total: 0, processed: 0, updated: 0, failed: 0 });
+
+    try {
+      const { data, error } = await client.config.getCompatThumbnailCandidates();
+      if (error) {
+        showAlert(error.value);
+        return;
+      }
+
+      const items = data?.items || [];
+      setThumbnailProgress({ total: items.length, processed: 0, updated: 0, failed: 0 });
+
+      let processed = 0;
+      let updated = 0;
+      let failed = 0;
+
+      for (const item of items) {
+        try {
+          const result = await thumbnailizeMarkdownImageMetadata(item.content);
+          if (result.updated > 0 && result.content !== item.content) {
+            const response = await client.config.applyCompatThumbnail(item.id, result.content);
+            if (response.error) {
+              failed += 1;
+            } else {
+              updated += 1;
+            }
+          }
+          failed += result.failed > 0 ? 1 : 0;
+        } catch {
+          failed += 1;
+        } finally {
+          processed += 1;
+          setThumbnailProgress({ total: items.length, processed, updated, failed });
+        }
+      }
+
+      showAlert(t("compat_tasks.thumbnail.result", { updated, failed, total: items.length }));
       loadStatus();
     } finally {
       setRunningTask(null);
@@ -189,6 +237,38 @@ export function CompatTasksPage() {
                   title={runningTask === "blurhash" ? t("compat_tasks.running") : t("compat_tasks.blurhash.run")}
                   disabled={runningTask !== null || status.blurhash.eligible === 0}
                   onClick={runBlurhashBackfill}
+                />
+              </div>
+            </SettingsCardBody>
+          </SettingsCard>
+
+          <SettingsCard tone={status.thumbnail.eligible > 0 ? "warning" : "success"}>
+            <SettingsCardHeader
+              title={t("compat_tasks.thumbnail.title")}
+              description={t("compat_tasks.thumbnail.description")}
+              badge={
+                <SettingsBadge tone={status.thumbnail.eligible > 0 ? "warning" : "success"}>
+                  {t("compat_tasks.thumbnail.eligible", { count: status.thumbnail.eligible })}
+                </SettingsBadge>
+              }
+            />
+            <SettingsCardBody>
+              <div className="space-y-3 text-sm text-neutral-600 dark:text-neutral-300">
+                <p>{t("compat_tasks.thumbnail.note")}</p>
+                {runningTask === "thumbnail" ? (
+                  <p>
+                    {t("compat_tasks.thumbnail.progress", {
+                      processed: thumbnailProgress.processed,
+                      total: thumbnailProgress.total,
+                      updated: thumbnailProgress.updated,
+                      failed: thumbnailProgress.failed,
+                    })}
+                  </p>
+                ) : null}
+                <Button
+                  title={runningTask === "thumbnail" ? t("compat_tasks.running") : t("compat_tasks.thumbnail.run")}
+                  disabled={runningTask !== null || status.thumbnail.eligible === 0}
+                  onClick={runThumbnailBackfill}
                 />
               </div>
             </SettingsCardBody>

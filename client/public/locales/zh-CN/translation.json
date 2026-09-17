@@ -53,6 +53,15 @@
       "run": "开始补齐",
       "progress": "已处理 {{processed}} / {{total}}，更新 {{updated}} 篇，失败 {{failed}} 篇。",
       "result": "Blurhash 补齐完成：共扫描 {{total}} 篇，成功更新 {{updated}} 篇，失败 {{failed}} 篇。"
+    },
+    "thumbnail": {
+      "title": "批量补齐缩略图",
+      "description": "为历史文章中缺失缩略图的正文图片生成约 480px 的 WebP 缩略图并上传回存储，优化首页卡片加载。",
+      "eligible": "待处理 {{count}} 篇",
+      "note": "该任务在当前浏览器中执行，会逐篇下载大图、生成 WebP 缩略图并回写 markdown，只跑一次即可。",
+      "run": "开始补齐",
+      "progress": "已处理 {{processed}} / {{total}}，更新 {{updated}} 篇，失败 {{failed}} 篇。",
+      "result": "缩略图补齐完成：共扫描 {{total}} 篇，成功更新 {{updated}} 篇，失败 {{failed}} 篇。"
     }
   },
   "ai_summary": {

@@ -137,8 +137,8 @@ export function FeedsPage() {
                     )}
                     <Waiting for={status === 'idle'}>
                         <div className={feedListClass}>
-                            {feeds[listState].data.map(({ id, ...feed }: any) => (
-                                <FeedCard key={id} id={id} {...feed} />
+                            {feeds[listState].data.map(({ id, ...feed }: any, index: number) => (
+                                <FeedCard key={id} id={id} {...feed} eager={index === 0} />
                             ))}
                         </div>
                         <Pagination

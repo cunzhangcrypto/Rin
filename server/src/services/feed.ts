@@ -136,6 +136,11 @@ export function FeedService(): Hono<{
             ? await buildFeedListData(db, type, page_num, limit_num, Boolean(admin))
             : await profileAsync(c, 'feed_list_cache_get', () => cache.getOrSet(cacheKey, () => buildFeedListData(db, type, page_num, limit_num, Boolean(admin))));
 
+        // 公开只读列表允许边缘缓存（发布时 clearFeedCache 已清理 feeds_ 前缀）
+        if (!admin && type !== 'draft' && type !== 'unlisted' && type !== 'recommend') {
+            c.header('Cache-Control', 'public, max-age=600');
+            c.header('CDN-Cache-Control', 'public, max-age=600');
+        }
         return c.json(data);
     });
 
