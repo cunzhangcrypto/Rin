@@ -417,40 +417,52 @@ export async function uploadImageFile(file: File, options?: UploadImageOptions):
 const THUMB_MAX_SIDE = 480;
 
 /**
- * 为单张图片解析出缩略图：
- * - "small"：原图长边不超过缩略图上限，无需缩略图（用原图 URL 标记已处理）。
- * - { thumbUrl }：已生成并上传到 R2 的缩略图 WebP URL。
- * - null：无法在此刻确定（应保持原样，待下次重试）。
+ * 为单张图片解析出缩略图，并返回原始尺寸：
+ * - 返回宽高：用于写入 #width/#height，保证首页卡片容器能撑出 aspectRatio（绝对定位的 <img> 依赖它显示）。
+ * - 已有 thumb 但缺宽高：只补宽高，避免重复上传（修复历史数据里「有缩略图没尺寸」导致的图不可见）。
+ * - 原图长边不超过上限：不生成缩略图，用原图 URL 标记已处理。
+ * - 无法确定：返回 null，保持原样待下次重试。
  */
-async function resolveThumbUrlForImage(rawUrl: string): Promise<{ thumbUrl: string } | "small" | null> {
+async function resolveThumbUrlForImage(rawUrl: string): Promise<
+  { thumbUrl: string; width: number; height: number } | { width: number; height: number } | null
+> {
+  if (!rawUrl) {
+    return null;
+  }
   const existing = parseImageUrlMetadata(rawUrl);
-  if (existing.thumb) {
-    return null;
-  }
-  if (existing.width && existing.height && Math.max(existing.width, existing.height) <= THUMB_MAX_SIDE) {
-    return "small";
+  if (existing.thumb && existing.width && existing.height) {
+    return null; // 已完整，无需处理
   }
 
+  // 始终加载原图以获取自然尺寸，保证 fragment 里 width/height 齐全
   const image = await loadImageFromUrl(existing.src);
-  const longestSide = Math.max(image.naturalWidth, image.naturalHeight);
-  if (!longestSide) {
+  if (!image.naturalWidth || !image.naturalHeight) {
     return null;
   }
-  if (longestSide <= THUMB_MAX_SIDE) {
-    return "small";
+  const width = existing.width || image.naturalWidth;
+  const height = existing.height || image.naturalHeight;
+
+  // 已有缩略图但缺尺寸：补齐宽高即可，避免重复上传
+  if (existing.thumb) {
+    return { thumbUrl: existing.thumb, width, height };
   }
 
-  const scale = Math.min(1, THUMB_MAX_SIDE / longestSide);
-  const width = Math.max(1, Math.round(image.naturalWidth * scale));
-  const height = Math.max(1, Math.round(image.naturalHeight * scale));
+  // 原图长边不超过上限：直接用原图作为首页图，无需生成缩略图
+  if (Math.max(width, height) <= THUMB_MAX_SIDE) {
+    return { width, height };
+  }
+
+  const scale = Math.min(1, THUMB_MAX_SIDE / Math.max(width, height));
+  const thumbWidth = Math.max(1, Math.round(width * scale));
+  const thumbHeight = Math.max(1, Math.round(height * scale));
   const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
+  canvas.width = thumbWidth;
+  canvas.height = thumbHeight;
   const context = canvas.getContext("2d");
   if (!context) {
     return null;
   }
-  context.drawImage(image, 0, 0, width, height);
+  context.drawImage(image, 0, 0, thumbWidth, thumbHeight);
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", 0.8));
   if (!blob) {
     return null;
@@ -466,14 +478,16 @@ async function resolveThumbUrlForImage(rawUrl: string): Promise<{ thumbUrl: stri
   if (!url) {
     return null;
   }
-  return { thumbUrl: url };
+  return { thumbUrl: url, width, height };
 }
 
 /**
  * 批量补齐 markdown 正文里缺失的缩略图（#thumb=）：
  * - 遍历 markdown 图片与 <img>，为无 thumb 的图片在浏览器里生成约 480px 的 WebP 并上传回 R2，
  *   再把 thumb URL 拼进原图地址的 fragment，换出更新后的正文。
- * - 原图已足够小的图片直接以原图 URL 标记为已处理，避免每次重复扫描。
+ * - 同步补齐 width/height（必要时从原图测得），保证首页卡片容器能撑出 aspectRatio 而正常显示缩略图；
+ *   保留已有 blurhash，不覆盖。
+ * - 原图足够小的图片以原图 URL 标记为已处理；已有 thumb 但缺宽高的图片仅补宽高即可。
  */
 export async function thumbnailizeMarkdownImageMetadata(content: string): Promise<MarkdownImageMetadataResult> {
   const markdownPattern = /!\[(.*?)\]\((\S+?)(?:\s+"[^"]*")?\)/g;
@@ -508,29 +522,32 @@ export async function thumbnailizeMarkdownImageMetadata(content: string): Promis
     }
 
     const existing = parseImageUrlMetadata(rawUrl);
-    if (existing.thumb) {
+    if (existing.thumb && existing.width && existing.height) {
       continue;
     }
 
-    let thumbUrl: string | undefined;
+    type ThumbOutcome = { thumbUrl: string; width: number; height: number } | { width: number; height: number };
+    let outcome: ThumbOutcome | null | undefined;
     try {
-      const outcome = await resolveThumbUrlForImage(rawUrl);
-      if (outcome === "small") {
-        thumbUrl = existing.src;
-      } else if (outcome) {
-        thumbUrl = outcome.thumbUrl;
-      }
+      outcome = await resolveThumbUrlForImage(rawUrl);
     } catch {
       failed += 1;
       continue;
     }
 
-    if (!thumbUrl) {
+    if (!outcome) {
       failed += 1;
       continue;
     }
 
-    const nextUrl = attachImageMetadataToUrl(existing.src, { thumb: thumbUrl });
+    const thumbUrl = "thumbUrl" in outcome ? outcome.thumbUrl : existing.thumb || existing.src;
+    // 以原始 rawUrl 为 base 拼接，保留已有 blurhash/thumb，并补上 width/height
+    const nextUrl = attachImageMetadataToUrl(rawUrl, {
+      blurhash: existing.blurhash,
+      width: outcome.width || undefined,
+      height: outcome.height || undefined,
+      thumb: thumbUrl,
+    });
     const replacement = match.type === "markdown"
       ? `![${match.alt}](${nextUrl})`
       : `<img${match.beforeSrc}src="${nextUrl}"${match.afterSrc}>`;

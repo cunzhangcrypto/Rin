@@ -69,20 +69,17 @@ export function contentHasImagesMissingMetadata(content: string) {
 }
 
 /**
- * 判断正文里是否存在「需要缩略图但还没有」的图片：
- * - 已有 #thumb= → 已补齐，不算。
- * - 尺寸已知且长边不超过缩略图上限（480）→ 原图即足够小，不需要缩略图，不算。
- * - 其余（无 thumb 且尺寸未知或长边较大）→ 算待处理。
+ * 判断正文里是否存在「缩略图尚未补齐」的图片。
+ * 补齐完成标准：同一张图的 fragment 需同时具备 thumb 与 width/height；
+ * 缺任一（例如只有 #thumb= 但没有尺寸）都算待处理，重跑即可修复。
+ * 这里不再用「长边是否超过 480」判断：补齐后小图也会写入 width/height 与
+ * 自身 thumb 标记，统一以「thumb + 宽高齐全」作为完成标准。
  */
 export function contentHasImagesMissingThumb(content: string) {
-    const maxThumbSide = 480;
     return listContentImageUrls(content).some((url) => {
         const metadata = parseImageMetadataFromUrl(url);
-        if (metadata.thumb) {
+        if (metadata.thumb && metadata.width && metadata.height) {
             return false;
-        }
-        if (metadata.width && metadata.height) {
-            return Math.max(metadata.width, metadata.height) > maxThumbSide;
         }
         return true;
     });
