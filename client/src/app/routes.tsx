@@ -35,6 +35,7 @@ import { useTranslation } from "react-i18next";
 // 移出首包，进入对应路由时才加载，首页首包显著变小，功能与路由行为完全不变。
 const LazyFeedPage = lazy(() => import("../page/feed").then((m) => ({ default: m.FeedPage })));
 const LazyMomentsPage = lazy(() => import("../page/moments").then((m) => ({ default: m.MomentsPage })));
+const LazyMomentDetailPage = lazy(() => import("../page/moment_detail").then((m) => ({ default: m.MomentDetailPage })));
 const LazyWritingPage = lazy(() => import("../page/writing").then((m) => ({ default: m.WritingPage })));
 
 export function AppRoutes() {
@@ -53,6 +54,10 @@ export function AppRoutes() {
 
       <AppRoute path="/moments">
         <LazyMomentsPage />
+      </AppRoute>
+
+      <AppRoute path="/moments/:id">
+        {(params) => <LazyMomentDetailPage id={params.id || ""} />}
       </AppRoute>
 
       <AppRoute path="/friends">

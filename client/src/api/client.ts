@@ -466,6 +466,11 @@ class MomentsAPI {
     return this.http.get<{ data: Moment[]; hasNext: boolean }>(`/api/moments${query ? `?${query}` : ""}`);
   }
 
+  // GET /api/moments/:id
+  async get(id: number): Promise<ApiResponse<Moment>> {
+    return this.http.get<Moment>(`/api/moments/${id}`);
+  }
+
   // POST /api/moments
   async create(body: CreateMomentRequest): Promise<ApiResponse<Moment>> {
     return this.http.post<Moment>("/api/moments", body);

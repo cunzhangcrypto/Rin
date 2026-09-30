@@ -229,7 +229,12 @@
     "publish": "Publish Moment",
     "title": "Moments",
     "total$count_one": "{{count}} moment in total",
-    "total$count_other": "{{count}} moments in total"
+    "total$count_other": "{{count}} moments in total",
+    "detail": "Moment Detail",
+    "back_to_list": "Back to Moments",
+    "copy_link": "Copy Link",
+    "share": "Share",
+    "copied": "Link copied"
   },
   "next": "Next Page",
   "last_page": "Last Page",

@@ -120,6 +120,33 @@ describe('MomentsService', () => {
         });
     });
 
+    describe('GET /:id - Get single moment', () => {
+        it('should return moment by id', async () => {
+            sqlite.exec(`
+                INSERT INTO moments (id, content, uid, created_at, updated_at) VALUES 
+                (1, 'Moment detail', 1, unixepoch(), unixepoch())
+            `);
+
+            const res = await app.request('/1', { method: 'GET' }, env);
+
+            expect(res.status).toBe(200);
+            const data = await res.json() as any;
+            expect(data.id).toBe(1);
+            expect(data.content).toBe('Moment detail');
+            expect(data.user.username).toBe('admin');
+        });
+
+        it('should return 404 for non-existent moment', async () => {
+            const res = await app.request('/999', { method: 'GET' }, env);
+            expect(res.status).toBe(404);
+        });
+
+        it('should return 400 for invalid id', async () => {
+            const res = await app.request('/abc', { method: 'GET' }, env);
+            expect(res.status).toBe(400);
+        });
+    });
+
     describe('POST / - Create moment', () => {
         it('should require authentication', async () => {
             const res = await app.request('/', {

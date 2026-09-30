@@ -46,6 +46,7 @@ function isKnownSpaRoute(pathname: string): boolean {
   return (
     pathname === "/timeline" ||
     pathname === "/moments" ||
+    pathname.startsWith("/moments/") ||
     pathname === "/friends" ||
     pathname === "/hashtags" ||
     pathname === "/geo" ||
@@ -178,6 +179,7 @@ function shouldNoindex(pathname: string): boolean {
     pathname === "/hashtags" ||
     pathname === "/timeline" ||
     pathname === "/moments" ||
+    pathname.startsWith("/moments/") ||
     pathname === "/friends" ||
     pathname.startsWith("/admin/")
   );

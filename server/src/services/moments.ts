@@ -50,6 +50,29 @@ export function MomentsService(): Hono {
         return c.json(data);
     });
 
+    // GET /moments/:id - 单个动态详情
+    app.get('/:id', async (c: AppContext) => {
+        const db = c.get('db');
+        const id_num = parseInt(c.req.param('id'), 10);
+
+        if (id_num <= 0 || !Number.isFinite(id_num)) {
+            return c.text('Bad request', 400);
+        }
+
+        const moment = await profileAsync(c, 'moment_get_db', () => db.query.moments.findFirst({
+            where: eq(moments.id, id_num),
+            with: {
+                user: { columns: { id: true, username: true, avatar: true } }
+            }
+        }));
+
+        if (!moment) {
+            return c.text('Not found', 404);
+        }
+
+        return c.json(moment);
+    });
+
     // POST /moments
     app.post('/', async (c: AppContext) => {
         const db = c.get('db');
