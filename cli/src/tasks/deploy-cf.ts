@@ -16,6 +16,7 @@ function env(name: string, defaultValue?: string, required = false) {
 const renv = (name: string, defaultValue?: string) => env(name, defaultValue, true)!;
 
 const WORKER_SECRET_KEYS = [
+  "ADMIN_API_KEY",
   "JWT_SECRET",
   "ADMIN_USERNAME",
   "ADMIN_PASSWORD",
