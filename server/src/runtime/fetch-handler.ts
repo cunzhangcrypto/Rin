@@ -362,6 +362,34 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
     } catch (error) {
       console.error("[prerender-geo]", error);
     }
+  } else if (pathname.startsWith("/moments/") && pathname.length > "/moments/".length) {
+    // 动态详情页服务端 OG 注入：/moments/:id
+    // 微信/QQ/Telegram 等分享爬虫不执行 JS，无法读到客户端 react-helmet 注入的 meta，
+    // 必须在服务端把动态内容写回 HTML head，才能渲染出带标题+描述+配图的分享卡片。
+    const idStr = pathname.substring("/moments/".length);
+    const idNum = parseInt(idStr, 10);
+    if (Number.isFinite(idNum) && idNum > 0) {
+      try {
+        const moment = await db.query.moments.findFirst({
+          where: eq(schema.moments.id, idNum),
+          columns: { id: true, content: true, createdAt: true },
+        });
+        if (moment) {
+          const momentPreview = String(moment.content || "")
+            .replace(/[#>*`\[\]()!]/g, "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, 120);
+          title = `${siteName} · 动态 ${moment.id}`;
+          if (momentPreview) description = momentPreview;
+          ogUrl = `https://www.cunzhangblog.com/moments/${moment.id}`;
+          ogType = "article";
+          ogImage = "https://www.cunzhangblog.com/og-image-v2.png";
+        }
+      } catch (error) {
+        console.error("[prerender-moment]", error);
+      }
+    }
   }
 
   if (alias) {
