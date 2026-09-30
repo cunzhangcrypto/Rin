@@ -261,6 +261,51 @@ bun run deploy:client
 
 ---
 
+# AI 智能体 API
+
+通过环境变量 `ADMIN_API_KEY` 为外部 AI 智能体提供写接口访问。持有该密钥的非浏览器客户端会被视为管理员身份，可发布/修改博客文章、发布/修改动态。
+
+> 配置：在 Cloudflare Worker 的 Settings → Variables and Secrets 增加 Secret `ADMIN_API_KEY`（本地开发在 `.dev.vars` 填写）。生产环境请不要提交真实密钥。**请务必使用强随机密钥**，例如本地生成后填入：
+
+```bash
+openssl rand -hex 32
+```
+
+该密钥拥有全站写权限（发文章/改文章/发动态），切忌用弱口令；泄漏后请立即在 Cloudflare 重新生成并轮换。
+
+调用时在 `Authorization: Bearer <ADMIN_API_KEY>` 传入密钥。
+
+**发布一篇博客文章**
+
+```bash
+curl -X POST "https://<worker>/api/feed" \
+  -H "Authorization: Bearer $ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"标题","content":"正文 Markdown……","alias":"slug","ai_visible":true}'
+```
+
+**修改已有博客文章（id 为文章 id）**
+
+```bash
+curl -X POST "https://<worker>/api/feed/123" \
+  -H "Authorization: Bearer $ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"新标题","content":"新正文……"}'
+```
+
+**发布一条动态**
+
+```bash
+curl -X POST "https://<worker>/api/moments" \
+  -H "Authorization: Bearer $ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"content":"动态文字和链接……"}'
+```
+
+读取已发布文章可复用公开接口：列表 `GET /api/feed`、详情 `GET /api/feed/:id` 或 `GET /api/feed/:alias`、动态列表 `GET /api/moments`。
+
+---
+
 # SEO 与 AI 搜索优化
 
 本项目已集成面向搜索引擎和 AI 系统优化的基础设施：

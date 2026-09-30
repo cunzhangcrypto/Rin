@@ -103,6 +103,23 @@ export const initContainerMiddleware = createMiddleware<{
     await next();
 });
 
+// 恒定时间比较：先对两边做 SHA-256（统一为固定 32 字节，也遮住原始长度），
+// 再逐字节累计差异，耗时与内容无关，避免时序侧信道泄露 API key 信息。
+async function timingSafeEqual(a: string, b: string): Promise<boolean> {
+    const encoder = new TextEncoder();
+    const [ha, hb] = await Promise.all([
+        crypto.subtle.digest("SHA-256", encoder.encode(a)),
+        crypto.subtle.digest("SHA-256", encoder.encode(b)),
+    ]);
+    const A = new Uint8Array(ha);
+    const B = new Uint8Array(hb);
+    let diff = 0;
+    for (let i = 0; i < A.length; i++) {
+        diff |= A[i] ^ B[i];
+    }
+    return diff === 0;
+}
+
 // Auth middleware - derive user from JWT
 export const authMiddleware = createMiddleware<{
     Bindings: Env;
@@ -120,7 +137,26 @@ export const authMiddleware = createMiddleware<{
             return getCookie(c, 'token');
         });
 
-        if (token && jwt) {
+        const apiKey = c.env.ADMIN_API_KEY;
+        let isApiKey = false;
+        if (token && apiKey) {
+            isApiKey = await timingSafeEqual(token, apiKey);
+        }
+
+        if (isApiKey) {
+            // 独立 API key：供外部 AI 智能体等非浏览器客户端调用写接口使用，
+            // 视为管理员身份（admin 用户以 openid="admin" 标识，与密码登录一致）。
+            const { users } = await import("../db/schema");
+            const admin = await profileAsync(c, "auth_apikey_admin_lookup", () => db.query.users.findFirst({
+                where: eq(users.openid, "admin")
+            }));
+
+            if (admin) {
+                c.set('uid', admin.id);
+                c.set('username', admin.username);
+                c.set('admin', admin.permission === 1);
+            }
+        } else if (token && jwt) {
             const profile = await profileAsync(c, "auth_verify", () => jwt.verify(token));
             if (profile) {
                 const { users } = await import("../db/schema");
