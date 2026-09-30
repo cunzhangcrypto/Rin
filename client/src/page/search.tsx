@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet'
 import { useTranslation } from "react-i18next"
 import { Link, useSearch } from "wouter"
 import { FeedCard } from "../components/feed_card"
+import { MomentItem } from "../components/moment_item"
 import { Waiting } from "../components/loading"
 import { client } from "../app/runtime"
 
@@ -70,8 +71,16 @@ export function SearchPage({ keyword }: { keyword: string }) {
                     </div>
                     <Waiting for={status === 'idle'}>
                         <div className={feedListClass}>
-                            {feeds?.data.map(({ id, ...feed }: any) => (
-                                <FeedCard key={id} id={id} {...feed} />
+                            {feeds?.data.map((item: any) => (
+                                item.type === 'moment' ? (
+                                    <MomentItem
+                                        key={`m-${item.id}`}
+                                        moment={{ id: item.id, content: item.content, createdAt: item.createdAt, updatedAt: item.updatedAt, user: item.user }}
+                                        canManage={false}
+                                    />
+                                ) : (
+                                    <FeedCard key={`f-${item.id}`} id={item.id} {...item} />
+                                )
                             ))}
                         </div>
                         <div className="wauto flex flex-row items-center mt-4 ani-show">

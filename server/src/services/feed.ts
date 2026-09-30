@@ -2,7 +2,7 @@ import { and, asc, count, desc, eq, gt, like, lt, ne, or, sql } from "drizzle-or
 import { Hono } from "hono";
 import type { CacheImpl, DB, Variables } from "../core/hono-types";
 import { profileAsync } from "../core/server-timing";
-import { feeds, visits, visitStats } from "../db/schema";
+import { feeds, moments, visits, visitStats } from "../db/schema";
 import { HyperLogLog } from "../utils/hyperloglog";
 import { extractImageWithMetadata } from "../utils/image";
 import { syncFeedAISummaryQueueState } from "./feed-ai-summary";
@@ -707,20 +707,42 @@ export function SearchService(): Hono<{
             orderBy: [desc(feeds.createdAt), desc(feeds.updatedAt)],
         })))).map(({ content, hashtags, summary, ...other }: any) => {
             return {
+                type: 'feed',
                 summary: summary.length > 0 ? summary : content.length > 100 ? content.slice(0, 100) : content,
                 hashtags: hashtags.map(({ hashtag }: any) => hashtag),
                 ...other
             };
         });
 
-        if (feed_list.length <= page_num * limit_num) {
-            return c.json({ size: feed_list.length, data: [], hasNext: false });
-        } else if (feed_list.length <= page_num * limit_num + limit_num) {
-            return c.json({ size: feed_list.length, data: feed_list.slice(page_num * limit_num), hasNext: false });
+        // 同时搜索动态（moments）内容：与文章合并展示，动态标记 type='moment'
+        const moment_list = (await profileAsync(c, 'moment_search_db', () => db.query.moments.findMany({
+            where: like(moments.content, searchKeyword),
+            columns: { id: true, content: true, createdAt: true, updatedAt: true },
+            with: {
+                user: { columns: { id: true, username: true, avatar: true } }
+            },
+            orderBy: [desc(moments.createdAt), desc(moments.updatedAt)],
+        }))).map((moment: any) => ({
+            ...moment,
+            type: 'moment',
+            summary: String(moment.content || "").slice(0, 120),
+        }));
+
+        // 文章与动态合并，统一按创建时间倒序
+        const merged = [...feed_list, ...moment_list].sort((a, b) => {
+            const ta = new Date(a.createdAt).getTime();
+            const tb = new Date(b.createdAt).getTime();
+            return tb - ta;
+        });
+
+        if (merged.length <= page_num * limit_num) {
+            return c.json({ size: merged.length, data: [], hasNext: false });
+        } else if (merged.length <= page_num * limit_num + limit_num) {
+            return c.json({ size: merged.length, data: merged.slice(page_num * limit_num), hasNext: false });
         } else {
             return c.json({
-                size: feed_list.length,
-                data: feed_list.slice(page_num * limit_num, page_num * limit_num + limit_num),
+                size: merged.length,
+                data: merged.slice(page_num * limit_num, page_num * limit_num + limit_num),
                 hasNext: true
             });
         }
