@@ -48,11 +48,15 @@ export function MomentDetailPage({ id }: { id: string }) {
     const description = moment?.content
         ? moment.content.replace(/[#>*`\[\]()!]/g, "").replace(/\s+/g, " ").slice(0, 120)
         : ""
+    const siteName = siteConfig.name || ""
 
     return (
         <>
             <Helmet>
                 <title>{moment ? momentTitle : t('moments.title')}</title>
+                <meta property="og:site_name" content={siteName} />
+                <meta property="og:title" content={moment ? `${t('moments.detail')} - ${siteConfig.name}` : t('moments.title')} />
+                <meta property="og:image" content={siteConfig.avatar} />
                 <meta property="og:type" content="article" />
                 <meta property="og:url" content={document.URL} />
                 {description && <meta property="og:description" content={description} />}
