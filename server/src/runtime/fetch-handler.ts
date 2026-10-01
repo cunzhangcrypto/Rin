@@ -395,8 +395,13 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
   if (alias) {
     let feedFound = false;
     try {
+      // 页面型文章（隐私政策 / 服务条款等）即使未列入文章列表（listed=0、ai_visible=0）
+      // 也允许被爬虫访问渲染，否则 Google 等抓取 /privacy、/terms 会得到真 404。
+      const isPageAlias = alias === "privacy" || alias === "terms";
       const feed = await db.query.feeds.findFirst({
-        where: and(eq(schema.feeds.alias, alias), eq(schema.feeds.draft, 0), or(eq(schema.feeds.listed, 1), eq(schema.feeds.ai_visible, 1))),
+        where: isPageAlias
+          ? and(eq(schema.feeds.alias, alias), eq(schema.feeds.draft, 0))
+          : and(eq(schema.feeds.alias, alias), eq(schema.feeds.draft, 0), or(eq(schema.feeds.listed, 1), eq(schema.feeds.ai_visible, 1))),
         columns: { id: true, title: true, content: true, summary: true, ai_summary: true, createdAt: true, updatedAt: true },
         with: {
           user: { columns: { username: true } },
