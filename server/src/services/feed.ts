@@ -564,7 +564,7 @@ export function FeedService(): Hono<{
             ai_summary_error: shouldQueueAISummary || isDraft ? "" : undefined,
             alias: normalizedAlias,
             top,
-            listed: listed ? 1 : 0,
+            listed: listed === undefined ? undefined : listed ? 1 : 0,
             draft: draft === undefined ? undefined : draft ? 1 : 0,
             recommended: recommended === undefined ? undefined : recommended ? 1 : 0,
             recommendOrder: recommend_order === undefined ? undefined : Math.max(0, Math.floor(recommend_order)),
