@@ -19,7 +19,6 @@ export function InlineAd() {
     <div className="my-6">
       <div className="text-xs font-medium text-gray-400 tracking-widest flex items-center gap-2 mb-2">
         <span className="flex-1 h-px bg-gray-100 dark:bg-gray-800"></span>
-        广告
         <span className="flex-1 h-px bg-gray-100 dark:bg-gray-800"></span>
       </div>
       <a
