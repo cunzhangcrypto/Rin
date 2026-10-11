@@ -139,9 +139,9 @@ export function FeedCard({ id, alias, title, avatar, draft, listed, top, summary
                     {top === 1 && <span className="text-theme">{t('article.top.title')}</span>}
                 </p>
                 <p className={`${styles.summary} ${activeVariant === "editorial" ? "mt-4 max-w-3xl" : ""}`}>{summary}</p>
-                {/* 2. 标签：单行显示，超出隐藏，保证全站卡片高度一致 */}
+                {/* 2. 标签：单行显示（固定行高），超出裁剪不显示，保证全站卡片 tags 行高度一致 */}
                 {hashtags.length > 0 &&
-                    <div className={`flex flex-row flex-nowrap justify-start overflow-hidden gap-2 ${activeVariant === "editorial" ? "mt-4" : "mt-2 gap-x-2"}`}>
+                    <div className={`flex flex-row flex-nowrap justify-start items-center overflow-hidden gap-x-2 ${activeVariant === "editorial" ? "mt-4 h-6" : "mt-2 h-6"}`}>
                         {hashtags.map(({ name }, index) => (
                             <HashTag key={index} name={name} />
                         ))}
