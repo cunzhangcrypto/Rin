@@ -385,9 +385,9 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
                     )}
                   </div>
                 </div>
-                {/* Tags at top */}
+                {/* Tags at top：单行显示，超出隐藏，与卡片样式统一 */}
                 {feed.hashtags.length > 0 && (
-                  <div className="mt-4 flex flex-row flex-wrap gap-x-2">
+                  <div className="mt-4 flex flex-row flex-nowrap overflow-hidden gap-x-2">
                     {feed.hashtags.map(({ name }, index) => (
                       <HashTag key={index} name={name} />
                     ))}
