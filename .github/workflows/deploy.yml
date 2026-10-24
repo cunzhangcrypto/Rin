@@ -215,6 +215,9 @@ jobs:
           ADMIN_API_KEY: ${{ secrets.ADMIN_API_KEY || '' }}
           ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || '' }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID || '' }}
+          SITE_URL: ${{ vars.SITE_URL || '' }}
           JWT_SECRET: ${{ secrets.JWT_SECRET || '' }}
           WEBHOOK_URL: ${{ vars.WEBHOOK_URL || '' }}
           RSS_TITLE: ${{ vars.RSS_TITLE || '' }}

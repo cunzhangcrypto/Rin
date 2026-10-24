@@ -85,6 +85,31 @@ export const comments = sqliteTable("comments", {
     updatedAt: updated_at,
 });
 
+export const consultRequests = sqliteTable("consult_requests", {
+    id: integer("id").primaryKey(),
+    requestNo: text("request_no").notNull().unique(),
+    category: text("category").notNull(),
+    packageType: text("package_type").notNull(),
+    packagePrice: integer("package_price").default(0).notNull(),
+    problem: text("problem").notNull(),
+    expected: text("expected").notNull(),
+    contactType: text("contact_type").notNull(),
+    contactAccount: text("contact_account").notNull(),
+    status: text("status").default("pending").notNull(),
+    paymentStatus: text("payment_status").default("unpaid").notNull(),
+    adminNote: text("admin_note").default("").notNull(),
+    isRead: integer("is_read").default(0).notNull(),
+    readAt: integer("read_at", { mode: 'timestamp' }),
+    notifyStatus: text("notify_status").default("pending").notNull(),
+    notifiedAt: integer("notified_at", { mode: 'timestamp' }),
+    notifyError: text("notify_error").default("").notNull(),
+    notifyAttempts: integer("notify_attempts").default(0).notNull(),
+    // IP 哈希（不可逆），仅用于限流与防重复提交，不保存原始 IP
+    ipHash: text("ip_hash").default("").notNull(),
+    createdAt: created_at,
+    updatedAt: updated_at,
+});
+
 export const hashtags = sqliteTable("hashtags", {
     id: integer("id").primaryKey(),
     name: text("name").notNull(),

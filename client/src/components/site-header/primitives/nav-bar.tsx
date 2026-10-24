@@ -20,6 +20,7 @@ export function NavBar({
       <NavItem menu={menu} onClick={onClick} itemClassName={itemClassName} title={t("moments.title")} selected={location === "/moments"} href="/moments" />
       <NavItem menu={menu} onClick={onClick} itemClassName={itemClassName} title={t("hashtags")} selected={location === "/hashtags"} href="/hashtags" />
       <NavItem menu={menu} onClick={onClick} itemClassName={itemClassName} title="村长" selected={location === "/about"} href="/about" />
+      <NavItem menu={menu} onClick={onClick} itemClassName={itemClassName} title="付费咨询" selected={location === "/consult"} href="/consult" />
     </>
   );
 }

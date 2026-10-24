@@ -10,8 +10,11 @@ import { getHeaderLayoutDefinition } from "../components/site-header/layout-regi
 import { Tips, TipsPage } from "../components/tips";
 import useTableOfContents from "../hooks/useTableOfContents";
 import { useSiteConfig } from "../hooks/useSiteConfig";
+import { AdminConsultPage } from "../page/admin-consult";
+import { AdminConsultDetailPage } from "../page/admin-consult-detail";
 import { AdminRecommendPage } from "../page/admin-recommend";
 import { CallbackPage } from "../page/callback";
+import { ConsultPage } from "../page/consult";
 import { CompatTasksPage } from "../page/compat-tasks";
 import { ErrorPage } from "../page/error";
 import { TOCHeader } from "../components/toc-header";
@@ -65,6 +68,18 @@ export function AppRoutes() {
       <AppRoute path="/hashtag/:name">
         {(params) => <HashtagPage name={params.name || ""} />}
       </AppRoute>
+
+      <AppRoute path="/consult" paddingClassName="mx-4">
+        <ConsultPage />
+      </AppRoute>
+
+      <AdminRoute path="/admin/consult" requirePermission title="咨询管理" description="查看并处理用户提交的付费咨询申请">
+        <AdminConsultPage />
+      </AdminRoute>
+
+      <AdminRoute path="/admin/consult/:id" requirePermission title="咨询详情" description="查看咨询内容并更新处理状态与付款状态">
+        {({ id }) => <AdminConsultDetailPage id={id || ""} />}
+      </AdminRoute>
 
       <AppRoute path="/search/:keyword">
         {(params) => <SearchPage keyword={params.keyword || ""} />}

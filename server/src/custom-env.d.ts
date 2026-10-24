@@ -7,6 +7,8 @@ declare global {
     SITE_URL?: string;
     CACHE_KV?: KVNamespace;
     CACHE_STORAGE_MODE?: string;
+    TELEGRAM_BOT_TOKEN?: string;
+    TELEGRAM_CHAT_ID?: string;
   }
 }
 

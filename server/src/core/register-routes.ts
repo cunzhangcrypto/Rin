@@ -1,6 +1,7 @@
 import type { RinApp } from "./app-types";
 import { PasswordAuthService } from "../services/auth";
 import { CommentService } from "../services/comments";
+import { ConsultService } from "../services/consult";
 import { ConfigService } from "../services/config";
 import { FaviconService } from "../services/favicon";
 import { FeedService, SearchService, WordPressService } from "../services/feed";
@@ -23,6 +24,7 @@ export function registerRoutes(app: RinApp) {
   app.route("/blob", BlobService());
   app.route("/friend", FriendService());
   app.route("/moments", MomentsService());
+  app.route("/consult", ConsultService());
   app.route("/user", UserService());
   app.route("/auth", PasswordAuthService());
   app.route("/config", ConfigService());

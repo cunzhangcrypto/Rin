@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "wouter";
 import { useSiteConfig } from "../hooks/useSiteConfig";
+import { AdminConsultBell } from "./admin-consult-bell";
 
 function AdminNavItem({
   href,
@@ -63,6 +64,7 @@ export function AdminLayout({
               </p>
               <div className="mt-3 flex flex-col gap-2">
                 <AdminNavItem href="/admin/writing" icon="ri-quill-pen-line" label={t("writing")} />
+                <AdminNavItem href="/admin/consult" icon="ri-customer-service-2-line" label="咨询管理" />
                 <AdminNavItem href="/admin/settings" icon="ri-settings-3-line" label={t("settings.title")} />
                 <AdminNavItem href="/admin/health" icon="ri-heart-pulse-line" label={t("health.title")} />
                 <AdminNavItem href="/admin/queue-status" icon="ri-todo-line" label={t("queue_status.title")} />
@@ -73,6 +75,9 @@ export function AdminLayout({
         </aside>
 
         <main className="min-w-0 flex-1">
+          <div className="mb-3 flex items-center justify-end">
+            <AdminConsultBell />
+          </div>
           <div className="rounded-2xl border border-black/10 bg-w p-6 dark:border-white/10">
             <div className="border-b border-black/5 pb-5 dark:border-white/5">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-theme/70">{t("admin.title")}</p>

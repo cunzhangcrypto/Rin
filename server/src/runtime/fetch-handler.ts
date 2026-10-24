@@ -48,6 +48,7 @@ function isKnownSpaRoute(pathname: string): boolean {
     pathname === "/moments" ||
     pathname.startsWith("/moments/") ||
     pathname === "/hashtags" ||
+    pathname === "/consult" ||
     pathname.startsWith("/hashtag/") ||
     pathname.startsWith("/search/") ||
     pathname.startsWith("/admin/")
@@ -342,6 +343,11 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
     } catch (error) {
       console.error("[prerender-home]", error);
     }
+  } else if (pathname === "/consult") {
+    title = `付费咨询 - ${siteName}`;
+    description = "技术问题搞不定？找村长帮你！VPS / 网络配置、AI 工具使用、网站 / Cloudflare 等问题的一对一付费咨询。";
+    ogUrl = `https://www.cunzhangblog.com/consult`;
+    ogType = "website";
   } else if (pathname.startsWith("/moments/") && pathname.length > "/moments/".length) {
     // 动态详情页服务端 OG 注入：/moments/:id
     // 微信/QQ/Telegram 等分享爬虫不执行 JS，无法读到客户端 react-helmet 注入的 meta，

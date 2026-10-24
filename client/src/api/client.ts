@@ -6,6 +6,13 @@ import { endpoint } from "../config";
 
 // Import shared types
 import type {
+  CreateConsultRequest,
+  CreateConsultResponse,
+  ConsultDetail,
+  ConsultListResponse,
+  ConsultUnreadResponse,
+  UpdateConsultRequest,
+  ConsultActionResponse,
   ApiResponse,
   RequestOptions,
   Feed,
@@ -144,6 +151,20 @@ export interface CompatBlurhashApplyResponse {
 
 // Re-export for external use
 export type {
+  CreateConsultRequest,
+  CreateConsultResponse,
+  ConsultListItem,
+  ConsultDetail,
+  ConsultListResponse,
+  ConsultUnreadResponse,
+  UpdateConsultRequest,
+  ConsultActionResponse,
+  ConsultCategory,
+  ConsultPackage,
+  ConsultContactType,
+  ConsultStatus,
+  ConsultPaymentStatus,
+  ConsultNotifyStatus,
   ApiResponse,
   RequestOptions,
   Feed,
@@ -684,6 +705,69 @@ class RSSAPI {
   }
 }
 
+/**
+ * Consult API methods
+ */
+class ConsultAPI {
+  constructor(private http: HttpClient) {}
+
+  // POST /api/consult - 公开提交咨询申请
+  async create(body: CreateConsultRequest): Promise<ApiResponse<CreateConsultResponse>> {
+    return this.http.post<CreateConsultResponse>("/api/consult", body);
+  }
+
+  // GET /api/consult/admin/list
+  async adminList(params?: {
+    page?: number;
+    limit?: number;
+    q?: string;
+    category?: string;
+    package?: string;
+    status?: string;
+    payment?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }): Promise<ApiResponse<ConsultListResponse>> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set("page", String(params.page));
+    if (params?.limit) searchParams.set("limit", String(params.limit));
+    if (params?.q) searchParams.set("q", params.q);
+    if (params?.category) searchParams.set("category", params.category);
+    if (params?.package) searchParams.set("package", params.package);
+    if (params?.status) searchParams.set("status", params.status);
+    if (params?.payment) searchParams.set("payment", params.payment);
+    if (params?.dateFrom) searchParams.set("dateFrom", params.dateFrom);
+    if (params?.dateTo) searchParams.set("dateTo", params.dateTo);
+    const query = searchParams.toString();
+    return this.http.get<ConsultListResponse>(`/api/consult/admin/list${query ? `?${query}` : ""}`);
+  }
+
+  // GET /api/consult/admin/unread
+  async adminUnread(): Promise<ApiResponse<ConsultUnreadResponse>> {
+    return this.http.get<ConsultUnreadResponse>("/api/consult/admin/unread");
+  }
+
+  // GET /api/consult/admin/:id
+  async adminGet(id: number | string): Promise<ApiResponse<ConsultDetail>> {
+    return this.http.get<ConsultDetail>(`/api/consult/admin/${id}`);
+  }
+
+  // POST /api/consult/admin/:id
+  async adminUpdate(id: number | string, body: UpdateConsultRequest): Promise<ApiResponse<ConsultActionResponse>> {
+    return this.http.post<ConsultActionResponse>(`/api/consult/admin/${id}`, body);
+  }
+
+  // POST /api/consult/admin/:id/notify-retry
+  async adminRetryNotify(id: number | string): Promise<ApiResponse<ConsultActionResponse>> {
+    return this.http.post<ConsultActionResponse>(`/api/consult/admin/${id}/notify-retry`);
+  }
+
+  // DELETE /api/consult/admin/:id
+  async adminDelete(id: number | string): Promise<ApiResponse<ConsultActionResponse>> {
+    return this.http.delete<ConsultActionResponse>(`/api/consult/admin/${id}`);
+  }
+}
+
 // ============================================================================
 // Main API Client Class
 // ============================================================================
@@ -696,6 +780,7 @@ export class ApiClient {
   user: UserAPI;
   friend: FriendAPI;
   moments: MomentsAPI;
+  consult: ConsultAPI;
   config: ConfigAPI;
   aiConfig: AIConfigAPI;
   storage: StorageAPI;
@@ -712,6 +797,7 @@ export class ApiClient {
     this.user = new UserAPI(this.http);
     this.friend = new FriendAPI(this.http);
     this.moments = new MomentsAPI(this.http);
+    this.consult = new ConsultAPI(this.http);
     this.config = new ConfigAPI(this.http);
     this.aiConfig = new AIConfigAPI(this.http);
     this.storage = new StorageAPI(this.http);
