@@ -144,19 +144,6 @@ export function FeedService(): Hono<{
         return c.json(data);
     });
 
-    // GET /feed/geo - GEO 文章归档列表（不进首页，仅供 AI 抓取入口）
-    app.get('/geo', async (c) => {
-        const db = c.get('db');
-
-        const data = await profileAsync(c, 'feed_geo_db', () => db.query.feeds.findMany({
-            where: and(eq(feeds.draft, 0), eq(feeds.ai_visible, 1)),
-            columns: { id: true, title: true, summary: true, alias: true, createdAt: true, updatedAt: true },
-            orderBy: [desc(feeds.createdAt), desc(feeds.updatedAt)],
-        }));
-
-        return c.json(data);
-    });
-
     // GET /feed/timeline
     app.get('/timeline', async (c) => {
         const db = c.get('db');
@@ -239,7 +226,7 @@ export function FeedService(): Hono<{
             ) as [any, ...any[]],
         ));
         await profileAsync(c, 'feed_recommend_order_cache_invalidate', () => clearFeedCache(cache, 0, null, null));
-        await profileAsync(c, 'feed_recommend_order_prerender_invalidate', () => clearPrerender(env, ["/", "/geo"]));
+        await profileAsync(c, 'feed_recommend_order_prerender_invalidate', () => clearPrerender(env, ["/"]));
         return c.text('Updated');
     });
     app.post('/', async (c) => {
@@ -317,8 +304,8 @@ export function FeedService(): Hono<{
         await profileAsync(c, 'feed_create_cache_invalidate', () => cache.deletePrefix('feeds_'));
         // 预填所有公开分页缓存，保证发布后首个访客也秒开
         await profileAsync(c, 'feed_create_cache_prewarm', () => prewarmFeedListCache(db, cache));
-        // 清预渲染快照：首页、/geo 列表立即回落实时直出，下次部署重爬补全完整版
-        await profileAsync(c, 'feed_create_prerender_invalidate', () => clearPrerender(env, ["/", "/geo"]));
+        // 清预渲染快照：首页立即回落实时直出，下次部署重爬补全完整版
+        await profileAsync(c, 'feed_create_prerender_invalidate', () => clearPrerender(env, ["/"]));
 
         if (result.length === 0) {
             return c.text('Failed to insert', 500);
@@ -586,9 +573,9 @@ export function FeedService(): Hono<{
         }
 
         await profileAsync(c, 'feed_update_cache_invalidate', () => clearFeedCache(cache, id_num, feed.alias, alias || null));
-        // 清预渲染快照：首页、/geo、旧/新别名文章页回落实时直出
+        // 清预渲染快照：首页、旧/新别名文章页回落实时直出
         await profileAsync(c, 'feed_update_prerender_invalidate', () => clearPrerender(env, [
-            "/", "/geo",
+            "/",
             feed.alias ? `/${feed.alias}` : null,
             normalizedAlias ? `/${normalizedAlias}` : null,
         ]));
@@ -649,9 +636,9 @@ export function FeedService(): Hono<{
         await profileAsync(c, 'feed_delete_db', () => db.delete(feeds).where(eq(feeds.id, id_num)));
         await profileAsync(c, 'feed_delete_cache_invalidate', () => clearFeedCache(cache, id_num, feed.alias, null));
         await profileAsync(c, 'feed_delete_cache_prewarm', () => prewarmFeedListCache(db, cache));
-        // 清预渲染快照：首页、/geo、文章页回落实时直出
+        // 清预渲染快照：首页、文章页回落实时直出
         await profileAsync(c, 'feed_delete_prerender_invalidate', () => clearPrerender(env, [
-            "/", "/geo",
+            "/",
             feed.alias ? `/${feed.alias}` : null,
         ]));
         return c.text('Deleted');

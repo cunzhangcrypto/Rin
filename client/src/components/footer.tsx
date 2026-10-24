@@ -105,41 +105,47 @@ function Footer() {
                             setDoubleClickTimes(doubleClickTimes + 1)
                         }
                     }}>
-                        © {new Date().getFullYear()} Web3村长 <a className='hover:underline' href="https://cunzhangai.com/" target="_blank" rel="noopener">AI工具箱</a>
+                        © {new Date().getFullYear()} Web3村长
                         <Spliter />
-                        <Link className='hover:underline' href="/geo">
-                            {t('geo.title')}
+                        <Link className='hover:underline' href="/privacy">
+                            {t('privacy')}
                         </Link>
-                    </span>
-                    {config.getBoolean('rss') && <>
                         <Spliter />
-                        <Popup trigger={
-                            <button className="hover:underline" type="button">
-                                RSS
-                            </button>
-                        }
-                            position="top center"
-                            arrow={false}
-                            closeOnDocumentClick>
-                            <div className="border-card">
-                                <p className='font-bold t-primary'>
-                                    {t('footer.rss')}
-                                </p>
-                                <p>
-                                    <a href='/rss.xml'>
-                                        RSS
-                                    </a> <Spliter />
-                                    <a href='/atom.xml'>
-                                        Atom
-                                    </a> <Spliter />
-                                    <a href='/rss.json'>
-                                        JSON
-                                    </a>
-                                </p>
+                        <Link className='hover:underline' href="/terms">
+                            {t('Terms of Service')}
+                        </Link>
+                        {config.getBoolean('rss') && <>
+                            <Spliter />
+                            <Popup trigger={
+                                <button className="hover:underline" type="button">
+                                    RSS
+                                </button>
+                            }
+                                position="top center"
+                                arrow={false}
+                                closeOnDocumentClick>
+                                <div className="border-card">
+                                    <p className='font-bold t-primary'>
+                                        {t('footer.rss')}
+                                    </p>
+                                    <p>
+                                        <a href='/rss.xml'>
+                                            RSS
+                                        </a> <Spliter />
+                                        <a href='/atom.xml'>
+                                            Atom
+                                        </a> <Spliter />
+                                        <a href='/rss.json'>
+                                            JSON
+                                        </a>
+                                    </p>
 
-                            </div>
-                        </Popup>
-                    </>}
+                                </div>
+                            </Popup>
+                        </>}
+                        <Spliter />
+                        <a className='hover:underline' href="mailto:cunzhang@czlab.dev">合作：cunzhang@czlab.dev</a>
+                    </span>
                 </p>
                 <div className="w-fit-content inline-flex rounded-full border border-zinc-200 p-[3px] dark:border-zinc-700">
                     <ThemeButton mode='light' current={modeState} label="Toggle light mode" icon="ri-sun-line" onClick={setMode} />

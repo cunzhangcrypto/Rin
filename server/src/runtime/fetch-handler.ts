@@ -47,9 +47,7 @@ function isKnownSpaRoute(pathname: string): boolean {
     pathname === "/timeline" ||
     pathname === "/moments" ||
     pathname.startsWith("/moments/") ||
-    pathname === "/friends" ||
     pathname === "/hashtags" ||
-    pathname === "/geo" ||
     pathname.startsWith("/hashtag/") ||
     pathname.startsWith("/search/") ||
     pathname.startsWith("/admin/")
@@ -180,7 +178,6 @@ function shouldNoindex(pathname: string): boolean {
     pathname === "/timeline" ||
     pathname === "/moments" ||
     pathname.startsWith("/moments/") ||
-    pathname === "/friends" ||
     pathname.startsWith("/admin/")
   );
 }
@@ -230,7 +227,7 @@ function injectBody(html: string, bodyHtml: string): string {
 const STATIC_FOOTER_HTML = `
 <footer class="prerender-footer" style="text-align:center;padding:24px 16px;color:#666;font-size:14px;line-height:1.8">
   <p>Web3村长是一个面向中文互联网用户，分享AI工具、技术实操与变现方法的技术博客</p>
-  <p>© 2026 Web3村长 <a href="https://cunzhangai.com/" style="color:#4f46e5">AI工具箱</a> | <a href="/geo" style="color:#4f46e5">品牌档案</a> | <a href="/rss.xml" style="color:#4f46e5">RSS</a></p>
+  <p>© 2026 Web3村长 <a href="/privacy" style="color:#4f46e5">隐私政策</a> | <a href="/terms" style="color:#4f46e5">服务条款</a> | <a href="/rss.xml" style="color:#4f46e5">RSS</a> | <a href="mailto:cunzhang@czlab.dev" style="color:#4f46e5">合作：cunzhang@czlab.dev</a></p>
 </footer>`;
 
 // 旧版 /feed/:id 与 /article/:slug 链接：若文章有别名，301 重定向到根路径别名，统一用别名 URL
@@ -344,23 +341,6 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
       bodyHtml += renderHotCategories(hotCategories);
     } catch (error) {
       console.error("[prerender-home]", error);
-    }
-  } else if (pathname === "/geo") {
-    // 预渲染 GEO 栏目：GEO 文章列表（标题+摘要+链接）
-    try {
-      const list = await db.query.feeds.findMany({
-        where: and(eq(schema.feeds.draft, 0), eq(schema.feeds.ai_visible, 1)),
-        columns: { id: true, title: true, summary: true, alias: true, content: true },
-        orderBy: [desc(schema.feeds.createdAt), desc(schema.feeds.updatedAt)],
-      });
-      bodyHtml = renderFeedCards(list.map((f: any) => ({
-        id: f.id,
-        title: f.title,
-        alias: f.alias,
-        summary: f.summary && f.summary.length > 0 ? f.summary : (f.content || "").slice(0, 100),
-      })));
-    } catch (error) {
-      console.error("[prerender-geo]", error);
     }
   } else if (pathname.startsWith("/moments/") && pathname.length > "/moments/".length) {
     // 动态详情页服务端 OG 注入：/moments/:id

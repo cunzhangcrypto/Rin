@@ -16,8 +16,6 @@ import { CompatTasksPage } from "../page/compat-tasks";
 import { ErrorPage } from "../page/error";
 import { TOCHeader } from "../components/toc-header";
 import { FeedsPage } from "../page/feeds";
-import { FriendsPage } from "../page/friends";
-import { GeoPage } from "../page/geo";
 import { HealthPage } from "../page/health";
 import { HashtagPage } from "../page/hashtag";
 import { HashtagsPage } from "../page/hashtags";
@@ -58,14 +56,6 @@ export function AppRoutes() {
 
       <AppRoute path="/moments/:id">
         {(params) => <LazyMomentDetailPage id={params.id || ""} />}
-      </AppRoute>
-
-      <AppRoute path="/friends">
-        <FriendsPage />
-      </AppRoute>
-
-      <AppRoute path="/geo">
-        <GeoPage />
       </AppRoute>
 
       <AppRoute path="/hashtags">
