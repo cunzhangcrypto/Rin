@@ -148,6 +148,26 @@ export function ConsultPage() {
             <span className="text-neutral-500 dark:text-neutral-400">申请编号</span>
             <span className="font-mono font-semibold tracking-wide t-primary">{result.requestNo}</span>
           </div>
+          <div className="mx-auto mt-6 max-w-xl rounded-2xl border border-black/5 bg-neutral-50 px-5 py-4 text-sm leading-7 text-neutral-500 dark:border-white/10 dark:bg-white/5 dark:text-neutral-400">
+            如果 2 小时内未接到村长回复，可联系村长：
+            <br />
+            QQ：418786396
+            <br />
+            Email：
+            <a className="text-theme hover:underline" href="mailto:cunzhang@czlab.dev">
+              cunzhang@czlab.dev
+            </a>
+            <br />
+            电报：
+            <a
+              className="text-theme hover:underline"
+              href="https://t.me/cunzhanglab"
+              target="_blank"
+              rel="noreferrer"
+            >
+              https://t.me/cunzhanglab
+            </a>
+          </div>
           <div className="mt-9 flex justify-center">
             <Link
               href="/"

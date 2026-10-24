@@ -241,11 +241,13 @@ async function sendConsultNotification(
   }
 }
 
-function runInBackground(c: AppContext, task: Promise<unknown>) {
+function runInBackground(c: AppContext, task: Promise<unknown>): Promise<unknown> | null {
   try {
     c.executionCtx.waitUntil(task);
+    return null;
   } catch {
-    task.catch(() => {});
+    // 没有 ExecutionContext 时（本地/测试环境）退化为同步等待，避免后台任务被提前终止
+    return task.catch(() => {});
   }
 }
 
@@ -385,7 +387,7 @@ export function ConsultService(): Hono {
 
     // 数据库保存成功后立即返回；Telegram 通知在后台执行，失败不影响申请
     const origin = new URL(c.req.url).origin;
-    runInBackground(
+    const background = runInBackground(
       c,
       sendConsultNotification(c.env, db, {
         id: inserted.id,
@@ -400,6 +402,8 @@ export function ConsultService(): Hono {
         createdAt: now,
       }, origin),
     );
+    // 仅在拿不到 ExecutionContext 时同步等待，正常情况下不阻塞响应
+    if (background) await background;
 
     return c.json({ id: inserted.id, requestNo: inserted.requestNo });
   });
