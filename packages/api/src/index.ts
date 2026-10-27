@@ -4,6 +4,7 @@
 // Types
 export * from './types';
 export * from './consult';
+export * from './categories';
 
 // Schemas for server-side validation
 export * from './schemas';

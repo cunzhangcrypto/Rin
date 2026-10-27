@@ -7,6 +7,7 @@ import Loading from 'react-loading';
 import {Link} from "wouter";
 import {ShowAlertType, useAlert} from '../components/dialog';
 import {Checkbox, Input} from "../components/input";
+import { FEED_CATEGORIES } from "@rin/api";
 import { DateTimeInput, FlatMetaRow, FlatPanel } from "@rin/ui";
 import { client } from "../app/runtime";
 import {Cache} from '../utils/cache';
@@ -24,6 +25,7 @@ async function publish({
   content,
   summary,
   tags,
+  categories,
   draft,
   createdAt,
   onCompleted,
@@ -34,6 +36,7 @@ async function publish({
   content: string;
   summary: string;
   tags: string[];
+  categories?: string[];
   draft: boolean;
   recommended?: boolean;
   aiVisible?: boolean;
@@ -50,6 +53,7 @@ async function publish({
       content,
       summary,
       tags,
+      categories,
       listed,
       draft,
       recommended,
@@ -78,6 +82,7 @@ async function update({
   content,
   summary,
   tags,
+  categories,
   listed,
   draft,
   recommended,
@@ -93,6 +98,7 @@ async function update({
   content?: string;
   summary?: string;
   tags?: string[];
+  categories?: string[];
   draft?: boolean;
   recommended?: boolean;
   aiVisible?: boolean;
@@ -109,6 +115,7 @@ async function update({
       content,
       summary,
       tags,
+      categories,
       listed,
       draft,
       recommended,
@@ -143,6 +150,7 @@ export function WritingPage({ id }: { id?: number }) {
   const [listed, setListed] = useState(true);
   const [recommended, setRecommended] = useState(false);
   const [aiVisible, setAiVisible] = useState(false);
+  const [categories, setCategories] = useState<string[]>([]);
   const [content, setContent] = cache.useCache("content", "");
   const [createdAt, setCreatedAt] = useState<Date | undefined>(new Date());
   const [publishing, setPublishing] = useState(false)
@@ -163,6 +171,7 @@ export function WritingPage({ id }: { id?: number }) {
         summary,
         alias,
         tags: tagsplit,
+        categories,
         draft,
         listed,
         recommended,
@@ -188,6 +197,7 @@ export function WritingPage({ id }: { id?: number }) {
         content,
         summary,
         tags: tagsplit,
+        categories,
         draft,
         alias,
         listed,
@@ -218,6 +228,10 @@ export function WritingPage({ id }: { id?: number }) {
             setDraft((data as any).draft === 1);
             setRecommended((data as any).recommended === 1);
             setAiVisible((data as any).ai_visible === 1);
+            const rawCategories = (data as any).categories as string | undefined;
+            if (rawCategories) {
+              setCategories(rawCategories.split(",").filter(Boolean));
+            }
             setCreatedAt(new Date(data.createdAt));
           }
         });
@@ -381,6 +395,35 @@ export function WritingPage({ id }: { id?: number }) {
                 placeholder={t('ai_visible')}
               />
             </FlatMetaRow>
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-black/10 bg-secondary px-4 py-3 dark:border-white/10">
+            <p className="mb-3 text-sm text-neutral-500 dark:text-neutral-400">{t('category_pick')}</p>
+            <div className="flex flex-row flex-wrap gap-2">
+              {FEED_CATEGORIES.map((item) => {
+                const active = categories.includes(item.key);
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() =>
+                      setCategories((prev) =>
+                        prev.includes(item.key) ? prev.filter((key) => key !== item.key) : [...prev, item.key],
+                      )
+                    }
+                    style={active ? { backgroundColor: item.color } : undefined}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm transition-colors ${
+                      active
+                        ? "text-white"
+                        : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                    }`}
+                  >
+                    <i className={`${item.icon} text-xs`} />
+                    {item.name}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </FlatPanel>
     )

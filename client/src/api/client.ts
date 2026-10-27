@@ -18,6 +18,8 @@ import type {
   Feed,
   FeedListResponse,
   TimelineItem,
+  FeedCategoryOverview,
+  CategoryFeedItem,
   CreateFeedRequest,
   CreateFeedResponse,
   UpdateFeedRequest,
@@ -170,6 +172,8 @@ export type {
   Feed,
   FeedListResponse,
   TimelineItem,
+  FeedCategoryOverview,
+  CategoryFeedItem,
   CreateFeedRequest,
   UpdateFeedRequest,
   AdjacentFeedResponse,
@@ -334,6 +338,16 @@ class FeedAPI {
   // GET /api/feed/recommend
   async recommend(): Promise<ApiResponse<RecommendFeed[]>> {
     return this.http.get<RecommendFeed[]>("/api/feed/recommend");
+  }
+
+  // GET /api/feed/categories - 首页栏目概览
+  async categories(): Promise<ApiResponse<FeedCategoryOverview[]>> {
+    return this.http.get<FeedCategoryOverview[]>("/api/feed/categories");
+  }
+
+  // GET /api/feed/category/:key - 栏目文章列表
+  async category(key: string): Promise<ApiResponse<CategoryFeedItem[]>> {
+    return this.http.get<CategoryFeedItem[]>(`/api/feed/category/${key}`);
   }
 
   // POST /api/feed/recommend/order - 批量保存推荐阅读排序（ids 顺序即展示顺序）

@@ -14,6 +14,7 @@ import { AdminConsultPage } from "../page/admin-consult";
 import { AdminConsultDetailPage } from "../page/admin-consult-detail";
 import { AdminRecommendPage } from "../page/admin-recommend";
 import { CallbackPage } from "../page/callback";
+import { CategoryPage } from "../page/category";
 import { ConsultPage } from "../page/consult";
 import { CompatTasksPage } from "../page/compat-tasks";
 import { ErrorPage } from "../page/error";
@@ -71,6 +72,10 @@ export function AppRoutes() {
 
       <AppRoute path="/consult" paddingClassName="mx-4">
         <ConsultPage />
+      </AppRoute>
+
+      <AppRoute path="/category/:key">
+        {(params) => <CategoryPage name={params.key || ""} />}
       </AppRoute>
 
       <AdminRoute path="/admin/consult" requirePermission title="咨询管理" description="查看并处理用户提交的付费咨询申请">

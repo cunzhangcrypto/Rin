@@ -17,7 +17,7 @@
   },
   "recommend": {
     "manage": "推荐阅读",
-    "tip": "最多展示 10 条，按上方顺序依次展示；可在此关闭不显示的、调整顺序。",
+    "tip": "按上方顺序依次展示，不限数量；可在此关闭不显示的、调整顺序。",
     "empty": "暂无推荐文章",
     "remove": "关闭",
     "save_order": "保存顺序",
@@ -760,5 +760,9 @@
   "sort_latest": "最新",
   "sort_popular": "热门",
   "total_tags": "共 {{count}} 个标签",
-  "hot_categories": "热门分类"
+  "hot_categories": "热门标签",
+  "categories": "分类",
+  "category_views": "次播放",
+  "category_empty": "这个栏目还没有文章",
+  "category_pick": "栏目分类（可多选，不选则不进任何栏目）"
 }

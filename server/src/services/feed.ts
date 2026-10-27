@@ -1,5 +1,6 @@
-import { and, asc, count, desc, eq, gt, like, lt, ne, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, inArray, like, lt, ne, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
+import { FEED_CATEGORIES, isFeedCategoryKey } from "@rin/api";
 import type { CacheImpl, DB, Variables } from "../core/hono-types";
 import { profileAsync } from "../core/server-timing";
 import { feeds, moments, visits, visitStats } from "../db/schema";
@@ -16,6 +17,21 @@ async function clearPrerender(env: Env, paths: (string | null | undefined)[]) {
   try {
     await clearPrerenderSnapshots(env, paths);
   } catch {}
+}
+
+// 栏目 key 以「,key1,key2,」形式存储，便于用 LIKE '%,key,%' 精确匹配，避免 ai 命中 domain
+function serializeCategories(input: unknown): string {
+    const values = Array.isArray(input)
+        ? input
+        : typeof input === "string"
+            ? input.split(",")
+            : [];
+    const keys = Array.from(new Set(values.map((item) => String(item).trim()).filter(isFeedCategoryKey)));
+    return keys.length > 0 ? `,${keys.join(",")},` : "";
+}
+
+function parseCategories(raw: string | null | undefined): string[] {
+    return (raw || "").split(",").filter(isFeedCategoryKey);
 }
 
 // Lazy-loaded modules for WordPress import
@@ -156,8 +172,8 @@ export function FeedService(): Hono<{
         })));
     });
 
-    // GET /feed/recommend - 推荐阅读：最多 10 条
-    // 手动排序过（recommend_order > 0）的优先按顺序返回，不足 10 条时用未排序的推荐随机补齐
+    // GET /feed/recommend - 推荐阅读：不限制数量
+    // 手动排序过（recommend_order > 0）的优先按顺序返回，其余推荐随机补齐
     // 按「北京时区日期」缓存 24 小时，一天内固定一批，第二天自动换新
     app.get('/recommend', async (c) => {
         const db = c.get('db');
@@ -170,29 +186,57 @@ export function FeedService(): Hono<{
                 where: and(eq(feeds.draft, 0), eq(feeds.listed, 1), eq(feeds.recommended, 1), gt(feeds.recommendOrder, 0)),
                 columns: { id: true, title: true, alias: true },
                 orderBy: [asc(feeds.recommendOrder), desc(feeds.createdAt)],
-                limit: 10,
             });
-            if (ordered.length >= 10) {
-                return ordered;
-            }
-            // 已排序的不足 10 条时，用未手动排序的推荐随机补齐，避免部分排序后其它推荐消失
+            // 未手动排序的推荐随机补齐，全部展示，不限制条数
             const rest = ordered.length > 0
                 ? await db.query.feeds.findMany({
                     where: and(eq(feeds.draft, 0), eq(feeds.listed, 1), eq(feeds.recommended, 1), eq(feeds.recommendOrder, 0)),
                     columns: { id: true, title: true, alias: true },
                     orderBy: sql`RANDOM()`,
-                    limit: 10 - ordered.length,
                 })
                 : await db.query.feeds.findMany({
                     where: and(eq(feeds.draft, 0), eq(feeds.listed, 1), eq(feeds.recommended, 1)),
                     columns: { id: true, title: true, alias: true },
                     orderBy: sql`RANDOM()`,
-                    limit: 10,
                 });
             return [...ordered, ...rest];
         }));
 
         return c.json(data);
+    });
+
+    // GET /feed/categories - 首页栏目列表（含文章数）
+    app.get('/categories', async (c) => {
+        const db = c.get('db');
+        const rows = await profileAsync(c, 'feed_categories_db', () => db.query.feeds.findMany({
+            where: and(eq(feeds.draft, 0), eq(feeds.listed, 1)),
+            columns: { categories: true },
+        }));
+        const counts = new Map<string, number>();
+        rows.forEach(({ categories }) => parseCategories(categories).forEach((key) => {
+            counts.set(key, (counts.get(key) || 0) + 1);
+        }));
+        return c.json(FEED_CATEGORIES.map((item) => ({ ...item, count: counts.get(item.key) || 0 })));
+    });
+
+    // GET /feed/category/:key - 栏目文章列表（时间轴样式，含播放量）
+    app.get('/category/:key', async (c) => {
+        const key = c.req.param('key');
+        if (!isFeedCategoryKey(key)) {
+            return c.text('Not found', 404);
+        }
+        const db = c.get('db');
+        const list = await profileAsync(c, 'feed_category_db', () => db.query.feeds.findMany({
+            where: and(eq(feeds.draft, 0), eq(feeds.listed, 1), like(feeds.categories, `%,${key},%`)),
+            columns: { id: true, title: true, alias: true, createdAt: true },
+            orderBy: [desc(feeds.createdAt), desc(feeds.updatedAt)],
+        }));
+        const ids = list.map((item) => item.id);
+        const stats = ids.length > 0
+            ? await profileAsync(c, 'feed_category_stats', () => db.select({ feedId: visitStats.feedId, pv: visitStats.pv }).from(visitStats).where(inArray(visitStats.feedId, ids)))
+            : [];
+        const pvMap = new Map(stats.map((item) => [item.feedId, item.pv]));
+        return c.json(list.map((item) => ({ ...item, pv: pvMap.get(item.id) || 0 })));
     });
 
     // POST /feed/recommend/order - 批量保存推荐阅读排序
@@ -237,7 +281,7 @@ export function FeedService(): Hono<{
         const admin = c.get('admin');
         const uid = c.get('uid');
         const body = await profileAsync(c, 'feed_create_parse', () => c.req.json());
-        const { title, alias, listed, content, summary, draft, tags, recommended, ai_visible, createdAt } = body;
+        const { title, alias, listed, content, summary, draft, tags, recommended, ai_visible, createdAt, categories } = body;
 
         if (!admin) {
             return c.text('Permission denied', 403);
@@ -291,6 +335,7 @@ export function FeedService(): Hono<{
             draft: draft ? 1 : 0,
             recommended: recommended ? 1 : 0,
             ai_visible: ai_visible ? 1 : 0,
+            categories: serializeCategories(categories),
             createdAt: date,
             updatedAt: date
         }).returning({ insertedId: feeds.id }));
@@ -510,7 +555,7 @@ export function FeedService(): Hono<{
         const uid = c.get('uid');
         const id = c.req.param('id');
         const body = await profileAsync(c, 'feed_update_parse', () => c.req.json());
-        const { title, listed, content, summary, alias, draft, top, tags, recommended, recommend_order, ai_visible, createdAt } = body;
+        const { title, listed, content, summary, alias, draft, top, tags, recommended, recommend_order, ai_visible, createdAt, categories } = body;
 
         const id_num = parseInt(id);
         const feed = await profileAsync(c, 'feed_update_lookup', () => db.query.feeds.findFirst({ where: eq(feeds.id, id_num) }));
@@ -556,6 +601,7 @@ export function FeedService(): Hono<{
             recommended: recommended === undefined ? undefined : recommended ? 1 : 0,
             recommendOrder: recommend_order === undefined ? undefined : Math.max(0, Math.floor(recommend_order)),
             ai_visible: ai_visible === undefined ? undefined : ai_visible ? 1 : 0,
+            categories: categories === undefined ? undefined : serializeCategories(categories),
             createdAt: createdAt ? new Date(createdAt) : undefined,
             updatedAt: updateTime
         }).where(eq(feeds.id, id_num)));

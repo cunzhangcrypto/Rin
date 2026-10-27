@@ -26,7 +26,7 @@ const getSocialIcon = (platform: string) => {
 
 export function Padding({ children, className, mode = 'both' }: { children?: React.ReactNode, className?: string, mode?: 'left' | 'right' | 'both' }) {
   const [data, setData] = useState<any>(null);
-  // 「实用工具」：从 /tools.md 随机抽 8 条，每次刷新更换
+  // 「实用工具」：从 /tools.md 随机抽 20 条，每次刷新更换
   const [dailyTools, setDailyTools] = useState<ToolItem[]>([]);
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export function Padding({ children, className, mode = 'both' }: { children?: Rea
         .catch(err => console.error("Recommend Load Failed:", err));
     }
     if (mode === 'left') {
-      fetchTools().then((items) => setDailyTools(pickRandomTools(items, 8)));
+      fetchTools().then((items) => setDailyTools(pickRandomTools(items, 20)));
     }
   }, [mode]);
 
@@ -102,7 +102,7 @@ export function Padding({ children, className, mode = 'both' }: { children?: Rea
           </div>
         </a>
 
-        {/* 实用工具：随机 8 条，来源同「今日工具推荐」 */}
+        {/* 实用工具：随机 20 条，来源同「今日工具推荐」 */}
         <div className="bg-white rounded-[1.8rem] p-4 border border-gray-100 shadow-sm text-left">
           <h4 className="text-[11px] font-black text-gray-400 mb-3 tracking-widest uppercase flex items-center px-1">
             <span className="w-1 h-1 bg-[#0f766e] mr-2 rounded-full"></span> 实用工具

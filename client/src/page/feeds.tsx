@@ -1,5 +1,6 @@
 import { useContext, useEffect, useRef, useState } from "react"
 import { Helmet } from 'react-helmet'
+import type { FeedCategoryOverview } from "@rin/api"
 import { Link, useSearch } from "wouter"
 import { FeedCard } from "../components/feed_card"
 import { Waiting } from "../components/loading"
@@ -40,6 +41,7 @@ export function FeedsPage() {
     const feedListClass = siteConfig.feedLayout === "masonry" ? "wauto columns-1 gap-5 ani-show md:columns-2" : "wauto flex flex-col ani-show";
     const ref = useRef("")
     const [hotTags, setHotTags] = useState<{ name: string; feeds: number }[]>([])
+    const [categories, setCategories] = useState<FeedCategoryOverview[]>([])
     function fetchFeeds(type: FeedType) {
         client.feed.list({
             page: page,
@@ -79,6 +81,9 @@ export function FeedsPage() {
                         .map((t) => ({ name: t.name, feeds: t.feeds })),
                 );
             }
+        });
+        client.feed.categories().then(({ data }) => {
+            if (Array.isArray(data)) setCategories(data);
         });
     }, [])
     return (
@@ -121,6 +126,22 @@ export function FeedsPage() {
                             }
                         </div>
                     </div>
+                    {listState === 'normal' && page === 1 && categories.length > 0 && (
+                        <div className="wauto flex flex-row flex-wrap items-center gap-2 mt-4">
+                            <span className="text-sm text-neutral-500 font-normal shrink-0">{t('categories')}</span>
+                            {categories.map((cat) => (
+                                <Link
+                                    key={cat.key}
+                                    href={`/category/${cat.key}`}
+                                    style={{ backgroundColor: cat.color }}
+                                    className="text-sm font-normal rounded-full px-3 py-1 text-white transition-opacity hover:opacity-85"
+                                >
+                                    <i className={`${cat.icon} mr-1`} aria-hidden="true" />
+                                    {cat.name}
+                                </Link>
+                            ))}
+                        </div>
+                    )}
                     {listState === 'normal' && page === 1 && hotTags.length > 0 && (
                         <div className="wauto flex flex-row flex-wrap items-center gap-2 mt-4">
                             <span className="text-sm text-neutral-500 font-normal shrink-0">{t('hot_categories')}</span>

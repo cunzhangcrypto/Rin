@@ -19,6 +19,8 @@ export const feeds = sqliteTable("feeds", {
     recommended: integer("recommended").default(0).notNull(),
     recommendOrder: integer("recommend_order").default(0).notNull(),
     ai_visible: integer("ai_visible").default(0).notNull(),
+    // 首页栏目（逗号分隔的 key 列表，如 "vps,ai"），为空表示不进入任何栏目
+    categories: text("categories").default("").notNull(),
     uid: integer("uid").references(() => users.id).notNull(),
     createdAt: created_at,
     updatedAt: updated_at,

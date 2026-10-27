@@ -41,6 +41,7 @@ export interface Feed {
   uv: number;
   top?: number;
   ai_visible?: boolean;
+  categories?: string;
 }
 
 export interface FeedListResponse {
@@ -71,6 +72,20 @@ export interface TimelineItem {
   createdAt: string;
 }
 
+// 首页栏目概览（文章数按已发布文章统计）
+export interface FeedCategoryOverview {
+  key: string;
+  name: string;
+  icon: string;
+  color: string;
+  count: number;
+}
+
+// 栏目下的文章（时间轴样式，pv 为播放量）
+export interface CategoryFeedItem extends TimelineItem {
+  pv: number;
+}
+
 export interface CreateFeedResponse {
   insertedId: number;
   alias?: string | null;
@@ -87,6 +102,7 @@ export interface CreateFeedRequest {
   recommend_order?: number;
   ai_visible?: boolean;
   createdAt?: string;
+  categories?: string[];
   tags: string[];
 }
 
@@ -101,6 +117,7 @@ export interface UpdateFeedRequest {
   recommend_order?: number;
   ai_visible?: boolean;
   createdAt?: string;
+  categories?: string[];
   tags?: string[];
   top?: number;
 }

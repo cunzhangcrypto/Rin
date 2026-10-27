@@ -17,7 +17,7 @@
   },
   "recommend": {
     "manage": "Recommended Reading",
-    "tip": "Up to 10 posts are shown in the order above. You can hide posts and reorder them here.",
+    "tip": "All posts are shown in the order above. You can hide posts and reorder them here.",
     "empty": "No recommended posts yet",
     "remove": "Remove",
     "save_order": "Save Order",
@@ -760,5 +760,9 @@
   "sort_latest": "Latest",
   "sort_popular": "Popular",
   "total_tags": "Total {{count}} tags",
-  "hot_categories": "Hot categories"
+  "hot_categories": "Hot tags",
+  "categories": "Categories",
+  "category_views": "views",
+  "category_empty": "No articles in this category yet",
+  "category_pick": "Categories (multi-select, leave empty to skip all)"
 }

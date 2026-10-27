@@ -1,5 +1,6 @@
 import { and, desc, eq, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
+import { FEED_CATEGORIES, getFeedCategory } from "@rin/api";
 import { getApp } from "./app-instance";
 import { escapeHtml, markdownToHtml } from "../utils/markdown-html";
 import { stripMarkdown, extractFaq } from "../utils/seo-markdown";
@@ -49,6 +50,7 @@ function isKnownSpaRoute(pathname: string): boolean {
     pathname.startsWith("/moments/") ||
     pathname === "/hashtags" ||
     pathname === "/consult" ||
+    pathname.startsWith("/category/") ||
     pathname.startsWith("/hashtag/") ||
     pathname.startsWith("/search/") ||
     pathname.startsWith("/admin/")
@@ -202,7 +204,7 @@ function renderFeedCards(
   return `<div class="prerender-list">${cards.join("")}</div>`;
 }
 
-// 预渲染：首页热门分类导航（标签名+跳转链接），供 AI/社交爬虫直接读取分类入口
+// 预渲染：首页热门标签导航（标签名+跳转链接），供 AI/社交爬虫直接读取标签入口
 function renderHotCategories(tags: { name: string; feeds: number }[]): string {
   if (tags.length === 0) {
     return "";
@@ -213,7 +215,16 @@ function renderHotCategories(tags: { name: string; feeds: number }[]): string {
         `<a class="text-sm font-normal rounded-full px-3 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-theme hover:text-white transition-colors" href="/hashtag/${encodeURIComponent(tag.name)}">${escapeHtml(tag.name)}</a>`,
     )
     .join("");
-  return `<div class="wauto flex flex-row flex-wrap items-center gap-2 mt-4"><span class="text-sm text-neutral-500 font-normal shrink-0">热门分类</span>${links}</div>`;
+  return `<div class="wauto flex flex-row flex-wrap items-center gap-2 mt-4"><span class="text-sm text-neutral-500 font-normal shrink-0">热门标签</span>${links}</div>`;
+}
+
+// 预渲染：首页栏目导航（栏目名+图标+跳转链接），供 AI/社交爬虫直接读取分类入口
+function renderCategoryNav(): string {
+  const links = FEED_CATEGORIES.map(
+    (category) =>
+      `<a class="text-sm font-normal rounded-full px-3 py-1 text-white" style="background-color:${category.color}" href="/category/${category.key}">${escapeHtml(category.name)}</a>`,
+  ).join("");
+  return `<div class="wauto flex flex-row flex-wrap items-center gap-2 mt-4"><span class="text-sm text-neutral-500 font-normal shrink-0">分类</span>${links}</div>`;
 }
 
 // 预渲染：把渲染好的正文/列表 HTML 注入 <div id="root">，React 挂载时会自动替换
@@ -273,6 +284,12 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
     }
   }
 
+  // 结尾斜杠归一化：/alias/ 301 到 /alias，避免带斜杠的外链命中 404 被 Google 记为坏链
+  if (pathname.length > 1 && pathname.endsWith("/")) {
+    const normalized = `${url.origin}${pathname.replace(/\/+$/, "")}${url.search}`;
+    return Response.redirect(normalized, 301);
+  }
+
   if (SKIP_SEO_ROUTES.has(pathname)) {
     return serveSpaEntry(request, env);
   }
@@ -314,14 +331,22 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
   let ogType: string | undefined;
   let bodyHtml = "";
 
-  // 预渲染首页：前 8 条已发布文章卡片（标题+摘要+链接），与客户端默认 pageSize 对齐
+  // 预渲染首页：当前页的已发布文章卡片（标题+摘要+链接），与客户端默认 pageSize 对齐
   if (pathname === "/") {
+    const pageNum = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10) || 1);
+    if (pageNum > 1) {
+      title = `第 ${pageNum} 页 - ${siteName}`;
+      description = `Web3村长文章列表第 ${pageNum} 页，分享AI工具、技术实操与变现方法。`;
+      ogUrl = `https://www.cunzhangblog.com/?page=${pageNum}`;
+      ogType = "website";
+    }
     try {
       const list = await db.query.feeds.findMany({
         where: and(eq(schema.feeds.draft, 0), eq(schema.feeds.listed, 1)),
         columns: { id: true, title: true, summary: true, alias: true, content: true },
         orderBy: [desc(schema.feeds.top), desc(schema.feeds.createdAt), desc(schema.feeds.updatedAt)],
         limit: 8,
+        offset: (pageNum - 1) * 8,
       });
       bodyHtml = renderFeedCards(list.map((f: any) => ({
         id: f.id,
@@ -330,7 +355,10 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
         summary: f.summary && f.summary.length > 0 ? f.summary : (f.content || "").slice(0, 100),
       })));
 
-      // 预渲染首页热门分类导航：取文章关联数最多的 8 个标签，与客户端 client.tag.list() 逻辑保持一致
+      // 预渲染首页栏目导航：6 个固定栏目入口，与客户端首页顺序一致
+      bodyHtml += renderCategoryNav();
+
+      // 预渲染首页热门标签导航：取文章关联数最多的 8 个标签，与客户端 client.tag.list() 逻辑保持一致
       const tagList = await db.query.hashtags.findMany({
         with: { feeds: { columns: { feedId: true } } },
       });
@@ -348,6 +376,15 @@ async function serveInjectedSpaEntry(request: Request, env: Env): Promise<Respon
     description = "技术问题搞不定？找村长帮你！VPS / 网络配置、AI 工具使用、网站 / Cloudflare 等问题的一对一付费咨询。";
     ogUrl = `https://www.cunzhangblog.com/consult`;
     ogType = "website";
+  } else if (pathname.startsWith("/category/") && pathname.length > "/category/".length) {
+    const key = pathname.substring("/category/".length);
+    const category = getFeedCategory(key);
+    if (category) {
+      title = `${category.name} - ${siteName}`;
+      description = `${category.name}栏目下的全部文章，按时间轴排列，标题后显示播放量。`;
+      ogUrl = `https://www.cunzhangblog.com/category/${key}`;
+      ogType = "website";
+    }
   } else if (pathname.startsWith("/moments/") && pathname.length > "/moments/".length) {
     // 动态详情页服务端 OG 注入：/moments/:id
     // 微信/QQ/Telegram 等分享爬虫不执行 JS，无法读到客户端 react-helmet 注入的 meta，
