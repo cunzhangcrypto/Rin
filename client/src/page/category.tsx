@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { Helmet } from 'react-helmet'
 import { Link } from "wouter"
 import { FEED_CATEGORIES, type CategoryFeedItem } from "@rin/api"
+import { BACK_TO_LIST_KEY } from "../components/feed_card"
 import { Waiting } from "../components/loading"
 import { client } from "../app/runtime"
 import { useSiteConfig } from "../hooks/useSiteConfig"
@@ -106,7 +107,14 @@ function CategoryItem({ id, title, alias, createdAt, pv }: { id: string, title: 
                 <span className="t-secondary text-sm shrink-0" title={new Date(createdAt).toLocaleString()}>
                     {formatter.format(new Date(createdAt))}
                 </span>
-                <Link href={href} target="_blank" className="text-base t-primary hover:text-theme text-pretty overflow-hidden">
+                <Link
+                    href={href}
+                    target="_blank"
+                    onClick={() => {
+                        sessionStorage.setItem(BACK_TO_LIST_KEY, `${window.location.pathname}${window.location.search}`)
+                    }}
+                    className="text-base t-primary hover:text-theme text-pretty overflow-hidden"
+                >
                     {title}
                 </Link>
                 <span className="text-xs t-secondary whitespace-nowrap shrink-0">

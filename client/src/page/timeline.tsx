@@ -1,6 +1,7 @@
 import {useEffect, useRef, useState} from "react"
 import {Helmet} from 'react-helmet'
 import {Link} from "wouter"
+import { BACK_TO_LIST_KEY } from "../components/feed_card"
 import {Waiting} from "../components/loading"
 import { client } from "../app/runtime"
 import {useSiteConfig} from "../hooks/useSiteConfig";
@@ -108,7 +109,14 @@ export function FeedItem({ id, title, alias, createdAt }: { id: string, title: s
                 <span className="t-secondary text-sm" title={new Date(createdAt).toLocaleString()}>
                     {formatter.format(new Date(createdAt))}
                 </span>
-                <Link href={href} target="_blank" className="text-base t-primary hover:text-theme text-pretty overflow-hidden">
+                <Link
+                    href={href}
+                    target="_blank"
+                    onClick={() => {
+                        sessionStorage.setItem(BACK_TO_LIST_KEY, `${window.location.pathname}${window.location.search}`)
+                    }}
+                    className="text-base t-primary hover:text-theme text-pretty overflow-hidden"
+                >
                     {title}
                 </Link>
             </div>
