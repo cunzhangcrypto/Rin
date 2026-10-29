@@ -65,6 +65,7 @@ export function AdminLayout({
               <div className="mt-3 flex flex-col gap-2">
                 <AdminNavItem href="/admin/writing" icon="ri-quill-pen-line" label={t("writing")} />
                 <AdminNavItem href="/admin/consult" icon="ri-customer-service-2-line" label="咨询管理" />
+                <AdminNavItem href="/admin/ads" icon="ri-advertisement-line" label="广告管理" />
                 <AdminNavItem href="/admin/settings" icon="ri-settings-3-line" label={t("settings.title")} />
                 <AdminNavItem href="/admin/health" icon="ri-heart-pulse-line" label={t("health.title")} />
                 <AdminNavItem href="/admin/queue-status" icon="ri-todo-line" label={t("queue_status.title")} />

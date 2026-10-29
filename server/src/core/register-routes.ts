@@ -1,4 +1,5 @@
 import type { RinApp } from "./app-types";
+import { AdsService } from "../services/ads";
 import { PasswordAuthService } from "../services/auth";
 import { CommentService } from "../services/comments";
 import { ConsultService } from "../services/consult";
@@ -16,6 +17,7 @@ export function registerRoutes(app: RinApp) {
   app.get("/", (c) => c.text("Hi"));
 
   app.route("/feed", FeedService());
+  app.route("/ads", AdsService());
   app.route("/search", SearchService());
   app.route("/wp", WordPressService());
   app.route("/tag", TagService());

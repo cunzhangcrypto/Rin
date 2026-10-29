@@ -5,6 +5,7 @@
 export * from './types';
 export * from './consult';
 export * from './categories';
+export * from './ads';
 
 // Schemas for server-side validation
 export * from './schemas';

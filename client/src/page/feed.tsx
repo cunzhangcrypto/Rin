@@ -7,7 +7,6 @@ import { Link, useLocation } from "wouter";
 import { useAlert, useConfirm } from "../components/dialog";
 import { HashTag } from "../components/hashtag";
 import { Waiting } from "../components/loading";
-import { Markdown } from "../components/markdown";
 import { client } from "../app/runtime";
 import { ClientConfigContext } from "../state/config";
 import { ProfileContext } from "../state/profile";
@@ -20,8 +19,7 @@ import mermaid from "mermaid";
 import { AdjacentSection } from "../components/adjacent_feed.tsx";
 import { stripImageUrlMetadata } from "../utils/image-upload";
 import { fetchTools, getToolEmoji, pickRandomTools, type ToolItem } from "../utils/tools";
-import { InlineAd } from "../components/inline_ad";
-import { splitMarkdownInMiddle } from "../utils/ads";
+import { ArticleContent } from "../components/article-content";
 import { Reward } from "../components/reward";
 import { BACK_TO_LIST_KEY } from "../components/feed_card";
 
@@ -426,16 +424,7 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
                     ) : null}
                   </div>
                 )}
-                {(() => {
-                  const [contentHead, contentTail] = splitMarkdownInMiddle(feed.content);
-                  return (
-                    <>
-                      <Markdown content={contentHead} />
-                      <InlineAd />
-                      <Markdown content={contentTail} />
-                    </>
-                  );
-                })()}
+                <ArticleContent content={feed.content} />
                 <TodayTools />
                 <Reward />
                 {/* Author card */}

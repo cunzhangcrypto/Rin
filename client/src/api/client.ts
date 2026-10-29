@@ -44,6 +44,12 @@ import type {
   AuthStatus,
   LoginRequest,
   LoginResponse,
+  PublicAdsResponse,
+  AdminAdsResponse,
+  AdMaterialInput,
+  AdSlotInput,
+  AdSlotKey,
+  AdMutationResponse,
 } from "@rin/api";
 
 export interface SettingsConfigResponse {
@@ -196,6 +202,12 @@ export type {
   AuthStatus,
   LoginRequest,
   LoginResponse,
+  PublicAdsResponse,
+  AdminAdsResponse,
+  AdMaterialInput,
+  AdSlotInput,
+  AdSlotKey,
+  AdMutationResponse,
 } from "@rin/api";
 
 
@@ -782,6 +794,58 @@ class ConsultAPI {
   }
 }
 
+/**
+ * Ads API methods
+ */
+class AdsAPI {
+  constructor(private http: HttpClient) {}
+
+  // GET /api/ads - 前台广告位数据（服务端已净化 HTML）
+  async publicList(): Promise<ApiResponse<PublicAdsResponse>> {
+    return this.http.get<PublicAdsResponse>("/api/ads");
+  }
+
+  // GET /api/ads/admin - 后台素材与广告位配置
+  async adminList(): Promise<ApiResponse<AdminAdsResponse>> {
+    return this.http.get<AdminAdsResponse>("/api/ads/admin");
+  }
+
+  // POST /api/ads/admin/ad
+  async adminCreate(body: AdMaterialInput): Promise<ApiResponse<AdMutationResponse>> {
+    return this.http.post<AdMutationResponse>("/api/ads/admin/ad", body);
+  }
+
+  // POST /api/ads/admin/ad/:id
+  async adminUpdate(id: number, body: AdMaterialInput): Promise<ApiResponse<AdMutationResponse>> {
+    return this.http.post<AdMutationResponse>(`/api/ads/admin/ad/${id}`, body);
+  }
+
+  // POST /api/ads/admin/ad/:id/duplicate
+  async adminDuplicate(id: number): Promise<ApiResponse<AdMutationResponse>> {
+    return this.http.post<AdMutationResponse>(`/api/ads/admin/ad/${id}/duplicate`);
+  }
+
+  // DELETE /api/ads/admin/ad/:id
+  async adminDelete(id: number): Promise<ApiResponse<AdMutationResponse>> {
+    return this.http.delete<AdMutationResponse>(`/api/ads/admin/ad/${id}`);
+  }
+
+  // POST /api/ads/admin/preview
+  async adminPreview(body: { html: string }): Promise<ApiResponse<{ html: string }>> {
+    return this.http.post<{ html: string }>("/api/ads/admin/preview", body);
+  }
+
+  // POST /api/ads/admin/slot/:slot
+  async adminUpdateSlot(slot: AdSlotKey, body: AdSlotInput): Promise<ApiResponse<AdMutationResponse>> {
+    return this.http.post<AdMutationResponse>(`/api/ads/admin/slot/${slot}`, body);
+  }
+
+  // POST /api/ads/admin/slot/:slot/links
+  async adminSetSlotAds(slot: AdSlotKey, adIds: number[]): Promise<ApiResponse<AdMutationResponse>> {
+    return this.http.post<AdMutationResponse>(`/api/ads/admin/slot/${slot}/links`, { adIds });
+  }
+}
+
 // ============================================================================
 // Main API Client Class
 // ============================================================================
@@ -789,6 +853,7 @@ class ConsultAPI {
 export class ApiClient {
   private http: HttpClient;
   feed: FeedAPI;
+  ads: AdsAPI;
   tag: TagAPI;
   comment: CommentAPI;
   user: UserAPI;
@@ -806,6 +871,7 @@ export class ApiClient {
   constructor(baseUrl: string) {
     this.http = new HttpClient(baseUrl);
     this.feed = new FeedAPI(this.http);
+    this.ads = new AdsAPI(this.http);
     this.tag = new TagAPI(this.http);
     this.comment = new CommentAPI(this.http);
     this.user = new UserAPI(this.http);

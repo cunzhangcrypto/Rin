@@ -12,6 +12,7 @@ import useTableOfContents from "../hooks/useTableOfContents";
 import { useSiteConfig } from "../hooks/useSiteConfig";
 import { AdminConsultPage } from "../page/admin-consult";
 import { AdminConsultDetailPage } from "../page/admin-consult-detail";
+import { AdminAdsPage } from "../page/admin-ads";
 import { AdminRecommendPage } from "../page/admin-recommend";
 import { CallbackPage } from "../page/callback";
 import { CategoryPage } from "../page/category";
@@ -108,6 +109,10 @@ export function AppRoutes() {
 
       <AdminRoute path="/admin/recommend" requirePermission title={t("recommend.manage")} description={t("admin.recommend_description")}>
         <AdminRecommendPage />
+      </AdminRoute>
+
+      <AdminRoute path="/admin/ads" requirePermission title="广告管理" description="统一管理广告素材、投放广告位与展示规则，保存后前台立即生效">
+        <AdminAdsPage />
       </AdminRoute>
 
       <AdminRoute path="/admin/writing" requirePermission title={t("writing")} description={t("admin.writing_description")}>
@@ -248,6 +253,13 @@ function AppRoute({
               <Padding className={paddingClassName}>
                 {resolvedContent}
               </Padding>
+
+              {/* 移动端（窄屏）页面底部：仅个人名片 + 左侧广告位 */}
+              <div className="2xl:hidden mt-4">
+                <div className="mx-auto w-full max-w-[360px] px-4 pb-4">
+                  <Padding mode="left-mobile" />
+                </div>
+              </div>
 
             </div>
           ),

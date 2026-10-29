@@ -126,6 +126,45 @@ export const feedHashtags = sqliteTable("feed_hashtags", {
     updatedAt: updated_at,
 });
 
+// 广告素材：html 为后台粘贴的原始代码，html_sanitized 为服务端白名单净化后的结果
+export const ads = sqliteTable("ads", {
+    id: integer("id").primaryKey(),
+    name: text("name").notNull(),
+    type: text("type").default("html").notNull(),
+    html: text("html").default("").notNull(),
+    htmlSanitized: text("html_sanitized").default("").notNull(),
+    image: text("image").default("").notNull(),
+    url: text("url").default("").notNull(),
+    enabled: integer("enabled").default(1).notNull(),
+    weight: integer("weight").default(10).notNull(),
+    startAt: integer("start_at", { mode: 'timestamp' }),
+    endAt: integer("end_at", { mode: 'timestamp' }),
+    createdAt: created_at,
+    updatedAt: updated_at,
+});
+
+// 广告位配置：每个广告位独立的启用状态、展示模式与正文插入参数
+export const adSlots = sqliteTable("ad_slots", {
+    slot: text("slot").primaryKey(),
+    enabled: integer("enabled").default(1).notNull(),
+    mode: text("mode").default("weighted").notNull(),
+    maxCount: integer("max_count").default(1).notNull(),
+    minGap: integer("min_gap").default(3).notNull(),
+    createdAt: created_at,
+    updatedAt: updated_at,
+});
+
+// 广告位与素材的多对多关联（同一素材可投放到多个广告位）
+export const adLinks = sqliteTable("ad_links", {
+    id: integer("id").primaryKey(),
+    adId: integer("ad_id").references(() => ads.id, { onDelete: 'cascade' }).notNull(),
+    slot: text("slot").notNull(),
+    sortOrder: integer("sort_order").default(0).notNull(),
+    createdAt: created_at,
+}, (table) => ({
+    adSlotUnique: unique().on(table.adId, table.slot),
+}));
+
 export const cache = sqliteTable("cache", {
     id: integer("id").primaryKey(),
     key: text("key").notNull(),
@@ -169,6 +208,10 @@ export const hashtagsRelations = relations(hashtags, ({ many }) => ({
     feeds: many(feedHashtags),
 }));
 
+export const adsRelations = relations(ads, ({ many }) => ({
+    links: many(adLinks),
+}));
+
 export const feedHashtagsRelations = relations(feedHashtags, ({ one }) => ({
     feed: one(feeds, {
         fields: [feedHashtags.feedId],
@@ -177,5 +220,12 @@ export const feedHashtagsRelations = relations(feedHashtags, ({ one }) => ({
     hashtag: one(hashtags, {
         fields: [feedHashtags.hashtagId],
         references: [hashtags.id],
+    }),
+}));
+
+export const adLinksRelations = relations(adLinks, ({ one }) => ({
+    ad: one(ads, {
+        fields: [adLinks.adId],
+        references: [ads.id],
     }),
 }));

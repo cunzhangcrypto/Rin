@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import { Padding as RinPadding } from "@rin/ui";
 import { client } from "../app/runtime";
 import { fetchTools, getToolEmoji, pickRandomTools, type ToolItem } from "../utils/tools";
+import { AdSlot } from "./ad-slot";
 
 const SOCIAL_LINKS = [
   { platform: 'youtube', url: 'https://youtube.com/@cunzhanglab' },
@@ -24,9 +25,74 @@ const getSocialIcon = (platform: string) => {
   return `https://img.icons8.com/ios-filled/50/ffffff/${p === 'youtube' ? 'youtube-play' : p === 'telegram' ? 'telegram-app' : p}.png`;
 };
 
-export function Padding({ children, className, mode = 'both' }: { children?: React.ReactNode, className?: string, mode?: 'left' | 'right' | 'both' }) {
+// 个人名片：桌面左栏与移动端底部共用
+function ProfileCard() {
+  return (
+    <div className="bg-white rounded-[1.8rem] overflow-hidden shadow-sm border border-gray-100">
+      <div className="bg-gradient-to-br from-[#0f766e] to-[#134e4a] p-5 text-center rounded-b-[1.8rem] overflow-hidden">
+        <div className="w-14 h-14 bg-white/20 rounded-full mx-auto mb-3 border border-white/30 overflow-hidden">
+          <img src="/logo.jpg" className="w-full h-full object-cover" alt="Web3村长" />
+        </div>
+        <h3 className="text-white font-bold text-base leading-tight">Web3村长</h3>
+        <p className="text-teal-100 text-[9px] mt-1 tracking-widest uppercase opacity-80">科技博主</p>
+        <div className="mt-4 pt-4 border-t border-white/10 flex justify-center gap-3">
+          {SOCIAL_LINKS.map(({ platform, url }) => {
+            if (platform === 'bilibili') {
+              return (
+                <a key={platform} href={url} target="_blank" rel="noreferrer"
+                   className="w-8 h-8 bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all hover:-translate-y-1 rounded-full ring-1 ring-white/10 text-white font-black text-[10px]">
+                  B
+                </a>
+              );
+            }
+            return (
+              <a key={platform} href={url} target="_blank" rel="noreferrer"
+                 className="w-8 h-8 bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all hover:-translate-y-1 rounded-full ring-1 ring-white/10 shadow-sm">
+                <img src={getSocialIcon(platform)!} className="w-4 h-4" alt={platform}
+                  onError={(e: any) => { e.target.src = 'https://img.icons8.com/ios-filled/50/ffffff/link.png' }}
+                />
+              </a>
+            );
+          })}
+        </div>
+      </div>
+      <div className="p-4 bg-white text-left">
+        <ul className="space-y-2.5">
+          {SERVICES.map((s, i) => (
+            <li key={i} className="flex items-center text-gray-700 text-[14px] font-bold">
+              <span className="w-3.5 h-3.5 bg-teal-50 text-[#0f766e] rounded-full flex items-center justify-center mr-2 text-[9px]">✓</span>
+              {s}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+// 实用工具：随机 20 条，来源同「今日工具推荐」
+function ToolsCard({ tools }: { tools: ToolItem[] }) {
+  if (tools.length === 0) return null;
+  return (
+    <div className="bg-white rounded-[1.8rem] p-4 border border-gray-100 shadow-sm text-left">
+      <h4 className="text-[11px] font-black text-gray-400 mb-3 tracking-widest uppercase flex items-center px-1">
+        <span className="w-1 h-1 bg-[#0f766e] mr-2 rounded-full"></span> 实用工具
+      </h4>
+      <nav className="flex flex-col gap-0.5">
+        {tools.map((item, i) => (
+          <a key={i} href={item.url} target="_blank" rel="noopener"
+             className="flex items-center py-2 px-2 rounded-xl hover:bg-teal-50 text-gray-700 font-bold text-[14px] transition-all">
+            <span className="text-base">{getToolEmoji(item.name, item.desc)}</span>
+            <span className="ml-3 flex-1 truncate">{item.name}</span>
+          </a>
+        ))}
+      </nav>
+    </div>
+  );
+}
+
+export function Padding({ children, className, mode = 'both' }: { children?: React.ReactNode, className?: string, mode?: 'left' | 'left-mobile' | 'right' | 'both' }) {
   const [data, setData] = useState<any>(null);
-  // 「实用工具」：从 /tools.md 随机抽 20 条，每次刷新更换
   const [dailyTools, setDailyTools] = useState<ToolItem[]>([]);
 
   useEffect(() => {
@@ -43,88 +109,29 @@ export function Padding({ children, className, mode = 'both' }: { children?: Rea
     }
   }, [mode]);
 
+  if (mode === 'left-mobile') {
+    return (
+      <div className="flex flex-col gap-5 w-full">
+        <ProfileCard />
+        <AdSlot slot="left" />
+      </div>
+    );
+  }
+
   if (mode === 'left') {
     return (
       <div className="flex flex-col gap-5 w-full">
-        {/* 个人信息卡片 */}
-        <div className="bg-white rounded-[1.8rem] overflow-hidden shadow-sm border border-gray-100">
-          <div className="bg-gradient-to-br from-[#0f766e] to-[#134e4a] p-5 text-center rounded-b-[1.8rem] overflow-hidden">
-            <div className="w-14 h-14 bg-white/20 rounded-full mx-auto mb-3 border border-white/30 overflow-hidden">
-              <img src="/logo.jpg" className="w-full h-full object-cover" alt="Web3村长" />
-            </div>
-            <h3 className="text-white font-bold text-base leading-tight">Web3村长</h3>
-            <p className="text-teal-100 text-[9px] mt-1 tracking-widest uppercase opacity-80">科技博主</p>
-            <div className="mt-4 pt-4 border-t border-white/10 flex justify-center gap-3">
-              {SOCIAL_LINKS.map(({ platform, url }) => {
-                if (platform === 'bilibili') {
-                  return (
-                    <a key={platform} href={url} target="_blank" rel="noreferrer"
-                       className="w-8 h-8 bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all hover:-translate-y-1 rounded-full ring-1 ring-white/10 text-white font-black text-[10px]">
-                      B
-                    </a>
-                  );
-                }
-                return (
-                  <a key={platform} href={url} target="_blank" rel="noreferrer"
-                     className="w-8 h-8 bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all hover:-translate-y-1 rounded-full ring-1 ring-white/10 shadow-sm">
-                    <img src={getSocialIcon(platform)!} className="w-4 h-4" alt={platform}
-                      onError={(e: any) => { e.target.src = 'https://img.icons8.com/ios-filled/50/ffffff/link.png' }}
-                    />
-                  </a>
-                );
-              })}
-            </div>
-          </div>
-          <div className="p-4 bg-white text-left">
-            <ul className="space-y-2.5">
-              {SERVICES.map((s, i) => (
-                <li key={i} className="flex items-center text-gray-700 text-[14px] font-bold">
-                  <span className="w-3.5 h-3.5 bg-teal-50 text-[#0f766e] rounded-full flex items-center justify-center mr-2 text-[9px]">✓</span>
-                  {s}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-        {/* 广告栏 */}
-        <a href="https://geonix.com/?partner_link=hr7qyBUuqy" target="_blank" rel="noreferrer"
-           className="block w-full rounded-[1.8rem] overflow-hidden shadow-sm border border-gray-100 bg-white group transition-all">
-          <div className="relative overflow-hidden bg-gradient-to-br from-[#0f766e]/10 to-[#134e4a]/10 rounded-b-[1.8rem]">
-            <img src="/geonix.webp" className="w-full h-40 object-cover" alt="Geonix" />
-          </div>
-          <div className="p-3.5 border-t border-gray-50 bg-white">
-            <h4 className="text-gray-800 font-bold text-[15px] truncate mb-1">出海必备 · 静态住宅IP</h4>
-            <div className="flex items-center justify-between">
-              <span className="text-[#0f766e] text-[12px] font-bold bg-teal-50 px-1.5 py-0.5 rounded-md">全球覆盖 · 不限速</span>
-              <span className="text-gray-300 group-hover:text-[#0f766e] transition-colors text-xs">→</span>
-            </div>
-          </div>
-        </a>
-
-        {/* 实用工具：随机 20 条，来源同「今日工具推荐」 */}
-        <div className="bg-white rounded-[1.8rem] p-4 border border-gray-100 shadow-sm text-left">
-          <h4 className="text-[11px] font-black text-gray-400 mb-3 tracking-widest uppercase flex items-center px-1">
-            <span className="w-1 h-1 bg-[#0f766e] mr-2 rounded-full"></span> 实用工具
-          </h4>
-          <nav className="flex flex-col gap-0.5">
-            {dailyTools.map((item, i) => (
-              <a key={i} href={item.url} target="_blank" rel="noopener"
-                 className="flex items-center py-2 px-2 rounded-xl hover:bg-teal-50 text-gray-700 font-bold text-[14px] transition-all">
-                <span className="text-base">{getToolEmoji(item.name, item.desc)}</span>
-                <span className="ml-3 flex-1 truncate">{item.name}</span>
-              </a>
-            ))}
-          </nav>
-        </div>
-
-        </div>
+        <ProfileCard />
+        <AdSlot slot="left" />
+        <ToolsCard tools={dailyTools} />
+      </div>
     );
   }
 
   if (mode === 'right') {
     return (
       <div className="flex flex-col gap-5 w-full text-left">
+        <AdSlot slot="right_top" />
         {data && data.length > 0 && (
           <div className="bg-white rounded-[1.8rem] p-6 shadow-sm border border-gray-100">
             <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-50">
@@ -146,6 +153,7 @@ export function Padding({ children, className, mode = 'both' }: { children?: Rea
             </nav>
           </div>
         )}
+        <AdSlot slot="right_bottom" />
       </div>
     );
   }
