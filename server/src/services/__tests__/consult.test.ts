@@ -16,6 +16,7 @@ const CONSULT_TABLE_SQL = `
         expected TEXT NOT NULL,
         contact_type TEXT NOT NULL,
         contact_account TEXT NOT NULL,
+        proof_image TEXT DEFAULT '' NOT NULL,
         status TEXT DEFAULT 'pending' NOT NULL,
         payment_status TEXT DEFAULT 'unpaid' NOT NULL,
         admin_note TEXT DEFAULT '' NOT NULL,

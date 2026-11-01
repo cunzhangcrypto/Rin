@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { consultRequests } from "../db/schema";
 import type { AppContext, DB } from "../core/hono-types";
+import { putStorageObject } from "../utils/storage";
 
 const CATEGORY_LABELS: Record<string, string> = {
   vps: "VPS / 网络配置",
@@ -49,7 +50,21 @@ const MAX_PROBLEM = 2000;
 const MAX_EXPECTED = 1500;
 const MAX_CONTACT = 120;
 const MAX_NOTE = 2000;
+const MAX_PROOF_URL = 500;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+// 支付凭证上传：仅图片、单张不超过 5MB，前端已转 WebP
+const PROOF_MAX_BYTES = 5 * 1024 * 1024;
+const PROOF_MIME: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+// 同一 IP 每小时最多上传 20 次（内存计数，仅作基础防刷）
+const PROOF_RATE_WINDOW_MS = 60 * 60 * 1000;
+const PROOF_RATE_MAX = 20;
+const proofUploadLog = new Map<string, number[]>();
 
 // 公开提交限流：同一 IP 10 分钟内最多 5 条，两次提交至少间隔 20 秒
 const RATE_WINDOW_MS = 10 * 60 * 1000;
@@ -73,6 +88,31 @@ async function sha256Hex(value: string): Promise<string> {
   return Array.from(new Uint8Array(buffer))
     .map((byte) => byte.toString(16).padStart(2, "0"))
     .join("");
+}
+
+function buf2hex(buffer: ArrayBuffer) {
+  return Array.from(new Uint8Array(buffer))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function isAllowedProofUrl(value: string) {
+  return value.length <= MAX_PROOF_URL && (/^https?:\/\//i.test(value) || value.startsWith("/"));
+}
+
+function allowProofUpload(ipHash: string) {
+  const now = Date.now();
+  const recent = (proofUploadLog.get(ipHash) || []).filter((time) => now - time < PROOF_RATE_WINDOW_MS);
+  if (recent.length >= PROOF_RATE_MAX) {
+    proofUploadLog.set(ipHash, recent);
+    return false;
+  }
+  recent.push(now);
+  proofUploadLog.set(ipHash, recent);
+  if (proofUploadLog.size > 5000) {
+    proofUploadLog.clear();
+  }
+  return true;
 }
 
 async function nextRequestNo(db: DB, ymd: string): Promise<string> {
@@ -120,6 +160,7 @@ function toDetail(row: any) {
     ...toListItem(row),
     problem: row.problem,
     expected: row.expected,
+    proofImage: row.proofImage || "",
     adminNote: row.adminNote,
     readAt: toIso(row.readAt),
     notifiedAt: toIso(row.notifiedAt),
@@ -142,12 +183,13 @@ function buildTelegramMessage(row: {
   expected: string;
   contactType: string;
   contactAccount: string;
+  proofImage?: string;
   createdAt: Date;
 }, adminUrl: string) {
   const packageLabel = PACKAGE_LABELS[row.packageType] || row.packageType;
   const priceSuffix = row.packagePrice > 0 ? ` ¥${row.packagePrice}` : "";
   // 纯文本发送（不启用 parse_mode），用户输入不会被当作 Markdown/HTML 解析
-  return [
+  const lines = [
     "📩 收到新的付费咨询申请",
     "",
     `申请编号：${row.requestNo}`,
@@ -161,14 +203,18 @@ function buildTelegramMessage(row: {
     "",
     "联系方式：",
     `${CONTACT_LABELS[row.contactType] || row.contactType}：${truncate(row.contactAccount, MAX_CONTACT)}`,
+  ];
+  if (row.proofImage) {
+    lines.push(`支付凭证：${row.proofImage}`);
+  }
+  lines.push(
     `提交时间：${shanghaiParts(row.createdAt).display}`,
     "状态：待审核",
     "",
     "查看详情：",
     adminUrl,
-  ]
-    .join("\n")
-    .slice(0, 4000);
+  );
+  return lines.join("\n").slice(0, 4000);
 }
 
 type NotifyResult = { status: "sent" | "failed" | "skipped"; error: string };
@@ -186,6 +232,7 @@ async function sendConsultNotification(
     expected: string;
     contactType: string;
     contactAccount: string;
+    proofImage?: string;
     createdAt: Date;
   },
   origin: string,
@@ -303,6 +350,12 @@ export function ConsultService(): Hono {
       return c.json({ error: "邮箱格式不正确" }, 400);
     }
 
+    // 支付凭证为选填：为空或必须是可访问的图片地址
+    const proofImage = String(body.proofImage || "").trim();
+    if (proofImage && !isAllowedProofUrl(proofImage)) {
+      return c.json({ error: "支付凭证地址无效，请重新上传" }, 400);
+    }
+
     const ip = c.req.header("cf-connecting-ip") || c.req.header("x-forwarded-for") || "unknown";
     const ipHash = await sha256Hex(ip.split(",")[0].trim());
 
@@ -362,6 +415,7 @@ export function ConsultService(): Hono {
             expected,
             contactType,
             contactAccount,
+            proofImage,
             status: "pending",
             paymentStatus: "unpaid",
             adminNote: "",
@@ -399,6 +453,7 @@ export function ConsultService(): Hono {
         expected,
         contactType,
         contactAccount,
+        proofImage,
         createdAt: now,
       }, origin),
     );
@@ -406,6 +461,40 @@ export function ConsultService(): Hono {
     if (background) await background;
 
     return c.json({ id: inserted.id, requestNo: inserted.requestNo });
+  });
+
+  // POST /consult/proof - 公开上传支付凭证（匿名，仅图片，前端已转 WebP）
+  app.post("/proof", async (c: AppContext) => {
+    const env = c.get("env");
+    const ip = c.req.header("cf-connecting-ip") || c.req.header("x-forwarded-for") || "unknown";
+    const ipHash = await sha256Hex(ip.split(",")[0].trim());
+
+    if (!allowProofUpload(ipHash)) {
+      return c.json({ error: "上传过于频繁，请稍后再试" }, 429);
+    }
+
+    const body = await c.req.parseBody().catch(() => null);
+    const file = body?.file;
+    if (!(file instanceof File)) {
+      return c.json({ error: "请选择图片文件" }, 400);
+    }
+    const suffix = PROOF_MIME[file.type];
+    if (!suffix) {
+      return c.json({ error: "仅支持 png / jpg / webp / gif 图片" }, 400);
+    }
+    if (file.size > PROOF_MAX_BYTES) {
+      return c.json({ error: "图片不能超过 5MB" }, 400);
+    }
+
+    try {
+      const buffer = await file.arrayBuffer();
+      const hash = buf2hex(await crypto.subtle.digest("SHA-1", buffer));
+      const result = await putStorageObject(env, `${hash}.${suffix}`, file, file.type, new URL(c.req.url).origin);
+      return c.json({ url: result.url });
+    } catch (error) {
+      console.error("[consult] proof upload failed", error instanceof Error ? error.message : error);
+      return c.json({ error: "上传失败，请稍后再试" }, 400);
+    }
   });
 
   // GET /consult/admin/unread - 未读数量 + 最近通知
@@ -596,6 +685,7 @@ export function ConsultService(): Hono {
       expected: row.expected,
       contactType: row.contactType,
       contactAccount: row.contactAccount,
+      proofImage: row.proofImage,
       createdAt: new Date(row.createdAt),
     }, origin);
 

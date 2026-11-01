@@ -742,6 +742,13 @@ class ConsultAPI {
     return this.http.post<CreateConsultResponse>("/api/consult", body);
   }
 
+  // POST /api/consult/proof - 公开上传支付凭证图片（无需登录）
+  async uploadProof(file: File): Promise<ApiResponse<{ url: string }>> {
+    const formData = new FormData();
+    formData.append("file", file);
+    return this.http.post<{ url: string }>("/api/consult/proof", formData);
+  }
+
   // GET /api/consult/admin/list
   async adminList(params?: {
     page?: number;

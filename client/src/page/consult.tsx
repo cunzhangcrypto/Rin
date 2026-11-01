@@ -1,10 +1,14 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Helmet } from "react-helmet";
 import { Link } from "wouter";
+import Lightbox from "yet-another-react-lightbox";
+import Zoom from "yet-another-react-lightbox/plugins/zoom";
+import "yet-another-react-lightbox/styles.css";
 import { client } from "../app/runtime";
 import { ButtonWithLoading } from "../components/button";
 import { useAlert } from "../components/dialog";
 import { useSiteConfig } from "../hooks/useSiteConfig";
+import { toWebpFile } from "../utils/image-upload";
 import type { ConsultCategory, ConsultContactType, ConsultPackage } from "../api/client";
 
 const CATEGORIES: Array<{ value: ConsultCategory; title: string; desc: string; icon: string }> = [
@@ -26,7 +30,7 @@ const PACKAGES: Array<{
     value: "text",
     name: "文字咨询",
     price: 29,
-    channel: "微信 | QQ | TG | Email",
+    channel: "QQ | 微信 | TG | Email",
     desc: "通过文字沟通，提供技术问题分析、配置建议、操作指导及常见故障排查。",
   },
   {
@@ -48,10 +52,16 @@ const PACKAGES: Array<{
 ];
 
 const CONTACT_TYPES: Array<{ value: ConsultContactType; label: string; placeholder: string }> = [
-  { value: "wechat", label: "微信", placeholder: "请填写微信号" },
   { value: "qq", label: "QQ", placeholder: "请填写 QQ 号" },
+  { value: "wechat", label: "微信", placeholder: "请填写微信号" },
   { value: "telegram", label: "Telegram", placeholder: "请填写 TG 用户名" },
   { value: "email", label: "Email", placeholder: "请填写邮箱地址" },
+];
+
+// 收款码：图片放在 client/public/assets 下，可直接替换
+const PAYMENTS = [
+  { name: "微信支付", icon: "/assets/wx_icon.png", qr: "/assets/consult-wechat.png", caption: "微信扫码支付" },
+  { name: "支付宝", icon: "/assets/ali_icon.png", qr: "/assets/alipay.png", caption: "支付宝扫码支付" },
 ];
 
 const MAX_PROBLEM = 2000;
@@ -65,8 +75,12 @@ export function ConsultPage() {
   const [pkg, setPkg] = useState<ConsultPackage | "">("");
   const [problem, setProblem] = useState("");
   const [expected, setExpected] = useState("");
-  const [contactType, setContactType] = useState<ConsultContactType>("wechat");
+  const [contactType, setContactType] = useState<ConsultContactType>("qq");
   const [contactAccount, setContactAccount] = useState("");
+  const [proofImage, setProofImage] = useState("");
+  const [proofUploading, setProofUploading] = useState(false);
+  const [previewQr, setPreviewQr] = useState<{ src: string; alt: string } | null>(null);
+  const proofInputRef = useRef<HTMLInputElement>(null);
   const [website, setWebsite] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ requestNo: string } | null>(null);
@@ -88,6 +102,36 @@ export function ConsultPage() {
     return null;
   };
 
+  const handleProofFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      showAlert("请选择图片文件");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showAlert("图片不能超过 5MB");
+      return;
+    }
+
+    setProofUploading(true);
+    try {
+      // 与其他图片一致：前端先转 WebP，再上传到 R2
+      const webpFile = await toWebpFile(file);
+      const { data, error } = await client.consult.uploadProof(webpFile);
+      if (error) {
+        showAlert(error.value);
+        return;
+      }
+      if (data?.url) {
+        setProofImage(data.url);
+      }
+    } catch (err) {
+      showAlert(err instanceof Error ? err.message : "上传失败，请稍后再试");
+    } finally {
+      setProofUploading(false);
+      if (proofInputRef.current) proofInputRef.current.value = "";
+    }
+  };
+
   const submit = async () => {
     if (submitting) return;
     const error = validate();
@@ -105,6 +149,7 @@ export function ConsultPage() {
         expected: expected.trim(),
         contactType,
         contactAccount: contactAccount.trim(),
+        proofImage: proofImage || undefined,
         website,
       });
       if (requestError) {
@@ -278,6 +323,44 @@ export function ConsultPage() {
             </div>
           </section>
 
+          {/* 支付 */}
+          <section className="mt-10 rounded-3xl border border-black/5 bg-w p-5 shadow-sm dark:border-white/10 sm:p-7">
+            <h2 className="text-lg font-semibold tracking-tight t-primary">支付与咨询</h2>
+            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+              请先确认咨询服务内容及费用，再完成支付与信息提交。
+            </p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {PAYMENTS.map((item) => (
+                <div
+                  key={item.name}
+                  className="rounded-2xl border border-black/5 bg-w p-4 dark:border-white/10"
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <img src={item.icon} alt="" className="h-5 w-5 object-contain" />
+                    <span className="text-sm font-semibold t-primary">{item.name}</span>
+                  </div>
+                  <div className="mt-3 rounded-xl bg-neutral-100 p-2 dark:bg-white/5">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewQr({ src: item.qr, alt: `${item.name}收款码` })}
+                      aria-label={`放大${item.name}收款码`}
+                      className="mx-auto block w-full max-w-[260px] cursor-zoom-in rounded-lg focus:outline-none focus:ring-2 focus:ring-theme/30"
+                    >
+                      <img
+                        src={item.qr}
+                        alt={`${item.name}收款码`}
+                        className="block aspect-square w-full rounded-lg object-contain"
+                      />
+                    </button>
+                  </div>
+                  <p className="mt-3 text-center text-xs text-neutral-500 dark:text-neutral-400">
+                    {item.caption} · 点击放大
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+
           {/* 申请表单 */}
           <section className="mt-10 rounded-3xl border border-black/5 bg-w p-5 shadow-sm dark:border-white/10 sm:p-7">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -380,6 +463,9 @@ export function ConsultPage() {
                 <p className="text-sm font-medium t-primary">
                   联系方式<span className="ml-1 text-red-500">*</span>
                 </p>
+                <p className="mt-1.5 text-xs leading-5 text-neutral-400">
+                  如网络搭建等敏感问题请用 QQ / TG / Email 联系。
+                </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {CONTACT_TYPES.map((item) => (
                     <button
@@ -404,6 +490,54 @@ export function ConsultPage() {
                   placeholder={selectedContact.placeholder}
                   className="mt-3 w-full rounded-xl border border-black/10 bg-w px-4 py-2.5 text-sm t-primary transition-colors placeholder:text-neutral-400 focus:border-black/20 focus:outline-none focus:ring-2 focus:ring-theme/10 dark:border-white/10 dark:placeholder:text-neutral-500"
                 />
+              </div>
+
+              <div>
+                <p className="text-sm font-medium t-primary">
+                  支付凭证<span className="ml-2 text-xs font-normal text-neutral-400">选填</span>
+                </p>
+                <p className="mt-1.5 text-xs leading-5 text-neutral-400">
+                  已付款可上传支付截图，支持 png / jpg / webp，不超过 5MB。
+                </p>
+                <div className="mt-3">
+                  {proofImage ? (
+                    <div className="relative inline-block">
+                      <img
+                        src={proofImage}
+                        alt="支付凭证"
+                        className="h-36 w-auto max-w-full rounded-xl border border-black/10 object-contain dark:border-white/10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setProofImage("")}
+                        className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full border border-black/10 bg-w text-neutral-500 shadow-sm transition-colors hover:text-red-500 dark:border-white/10"
+                        aria-label="移除支付凭证"
+                      >
+                        <i className="ri-close-line text-sm" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => proofInputRef.current?.click()}
+                      disabled={proofUploading}
+                      className="flex items-center gap-2 rounded-xl border border-dashed border-black/15 px-4 py-3 text-sm text-neutral-500 transition-colors hover:border-theme/40 hover:text-theme disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/15 dark:text-neutral-400"
+                    >
+                      <i className={proofUploading ? "ri-loader-4-line animate-spin" : "ri-image-add-line"} />
+                      <span>{proofUploading ? "上传中…" : "上传支付凭证"}</span>
+                    </button>
+                  )}
+                  <input
+                    ref={proofInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    className="hidden"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) void handleProofFile(file);
+                    }}
+                  />
+                </div>
               </div>
 
               {/* 蜜罐字段：对用户隐藏 */}
@@ -431,6 +565,16 @@ export function ConsultPage() {
       <AlertUI />
         </div>
       </main>
+
+      <Lightbox
+        open={previewQr !== null}
+        close={() => setPreviewQr(null)}
+        slides={previewQr ? [{ src: previewQr.src, alt: previewQr.alt }] : []}
+        plugins={[Zoom]}
+        zoom={{ maxZoomPixelRatio: 3 }}
+        carousel={{ padding: 0, finite: true }}
+        render={{ buttonPrev: () => null, buttonNext: () => null }}
+      />
     </div>
   );
 }

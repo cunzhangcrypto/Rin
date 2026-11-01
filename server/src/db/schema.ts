@@ -97,6 +97,8 @@ export const consultRequests = sqliteTable("consult_requests", {
     expected: text("expected").notNull(),
     contactType: text("contact_type").notNull(),
     contactAccount: text("contact_account").notNull(),
+    // 支付凭证图片地址（用户选填上传，存 R2）
+    proofImage: text("proof_image").default("").notNull(),
     status: text("status").default("pending").notNull(),
     paymentStatus: text("payment_status").default("unpaid").notNull(),
     adminNote: text("admin_note").default("").notNull(),

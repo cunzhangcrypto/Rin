@@ -21,6 +21,8 @@ export interface CreateConsultRequest {
   expected: string;
   contactType: ConsultContactType;
   contactAccount: string;
+  // 支付凭证图片地址（选填，上传后得到）
+  proofImage?: string;
   // 蜜罐字段：正常用户不会填写，用于拦截垃圾提交
   website?: string;
 }
@@ -49,6 +51,7 @@ export interface ConsultListItem {
 export interface ConsultDetail extends ConsultListItem {
   problem: string;
   expected: string;
+  proofImage: string;
   adminNote: string;
   readAt: string | null;
   notifiedAt: string | null;

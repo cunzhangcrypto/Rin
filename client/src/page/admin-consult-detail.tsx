@@ -205,6 +205,19 @@ export function AdminConsultDetailPage({ id }: { id: string }) {
                 {detail.expected}
               </p>
             </div>
+
+            {detail.proofImage ? (
+              <div className="mt-5">
+                <p className="text-xs font-medium text-neutral-400">支付凭证</p>
+                <a href={detail.proofImage} target="_blank" rel="noreferrer" className="mt-2 inline-block">
+                  <img
+                    src={detail.proofImage}
+                    alt="支付凭证"
+                    className="max-h-72 w-auto max-w-full rounded-xl border border-black/10 object-contain dark:border-white/10"
+                  />
+                </a>
+              </div>
+            ) : null}
           </div>
 
           {/* 右侧：处理操作 */}

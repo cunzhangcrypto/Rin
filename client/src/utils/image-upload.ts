@@ -263,7 +263,7 @@ export async function enrichMarkdownImageMetadata(content: string): Promise<Mark
  * - GIF 保留原样（动图转换会丢失动画）。
  * - 转换失败或浏览器不支持 WebP 编码时返回原文件，不阻塞上传。
  */
-async function toWebpFile(file: File): Promise<File> {
+export async function toWebpFile(file: File): Promise<File> {
   if (file.type === "image/gif" || !file.type.startsWith("image/")) {
     return file;
   }
