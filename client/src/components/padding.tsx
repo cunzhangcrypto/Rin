@@ -91,7 +91,7 @@ function ToolsCard({ tools }: { tools: ToolItem[] }) {
   );
 }
 
-export function Padding({ children, className, mode = 'both' }: { children?: React.ReactNode, className?: string, mode?: 'left' | 'left-mobile' | 'right' | 'both' }) {
+export function Padding({ children, className, mode = 'both', showRightAds = false }: { children?: React.ReactNode, className?: string, mode?: 'left' | 'left-mobile' | 'right' | 'both', showRightAds?: boolean }) {
   const [data, setData] = useState<any>(null);
   const [dailyTools, setDailyTools] = useState<ToolItem[]>([]);
 
@@ -114,6 +114,9 @@ export function Padding({ children, className, mode = 'both' }: { children?: Rea
       <div className="flex flex-col gap-5 w-full">
         <ProfileCard />
         <AdSlot slot="left" />
+        {/* 移动端补充右侧广告位：排在左侧广告位之后 */}
+        {showRightAds && <AdSlot slot="right_top" />}
+        {showRightAds && <AdSlot slot="right_bottom" />}
       </div>
     );
   }

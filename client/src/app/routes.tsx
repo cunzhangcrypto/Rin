@@ -257,7 +257,8 @@ function AppRoute({
               {/* 移动端（窄屏）页面底部：仅个人名片 + 左侧广告位 */}
               <div className="2xl:hidden mt-4">
                 <div className="mx-auto w-full max-w-[360px] px-4 pb-4">
-                  <Padding mode="left-mobile" />
+                  {/* 首页额外展示右侧两个广告位（排在左侧广告位之后） */}
+                  <Padding mode="left-mobile" showRightAds={path === "/"} />
                 </div>
               </div>
 
